@@ -1,0 +1,263 @@
+/* =======================
+   Базовые настройки – всё уменьшено
+   ======================= */
+* {
+    font-size: 9pt;
+    font-family: 'Segoe UI', Arial, sans-serif;
+}
+
+QWidget {
+    background-color: #1e1e1e;
+    color: #ffffff;
+}
+
+QScrollArea, QGroupBox, QFrame {
+    border: none;
+    background-color: #1e1e1e;
+}
+
+/* =======================
+   Кнопки
+   ======================= */
+QPushButton {
+    background: qlineargradient(x1:0 y1:0, x2:0 y2:1,
+                                stop:0 #3a3a3a, stop:1 #2a2a2a);
+    border: 1px solid #555;
+    border-radius: 3px;
+    padding: 4px 8px;
+    color: #ffffff;
+}
+QPushButton:hover {
+    background: qlineargradient(x1:0 y1:0, x2:0 y2:1,
+                                stop:0 #4a4a4a, stop:1 #3a3a3a);
+}
+QPushButton:pressed {
+    background: #2a2a2a;
+}
+QPushButton:checked {
+    background: qlineargradient(x1:0 y1:0, x2:0 y2:1,
+                                stop:0 #5a9, stop:1 #3a7);
+    border-color: #2a7;
+}
+
+/* Кнопка "Назад" */
+#backButton {
+    background: #333;
+    border: 1px solid #555;
+    min-width: 70px;
+    padding: 3px 6px;
+}
+#backButton:hover {
+    background: #444;
+}
+
+/* Кнопки главного меню */
+#mainMenuButton {
+    font-size: 13pt;
+    padding: 6px 16px;
+    min-width: 180px;
+}
+
+/* Кнопка "О программе" */
+#aboutButton {
+    background: qlineargradient(x1:0 y1:0, x2:0 y2:1,
+                                stop:0 #3a3a3a, stop:1 #2a2a2a);
+    border: 1px solid #555;
+    border-radius: 3px;
+    padding: 2px 6px;
+    font-size: 8pt;
+    color: #ffffff;
+}
+#aboutButton:hover {
+    background: qlineargradient(x1:0 y1:0, x2:0 y2:1,
+                                stop:0 #4a4a4a, stop:1 #3a3a3a);
+}
+
+/* Кнопки вкладок сканирования/разблокировки */
+#scanButton, #selectAllBtn, #unlockBtn, #resetNewButton, #refreshButton {
+    background: qlineargradient(x1:0 y1:0, x2:0 y2:1,
+                                stop:0 #fff, stop:1 #ccc);
+    color: black;
+    border-radius: 3px;
+    padding: 3px 8px;
+    font-size: 9pt;
+}
+#scanButton:hover, #selectAllBtn:hover, #unlockBtn:hover,
+#resetNewButton:hover, #refreshButton:hover {
+    background: qlineargradient(x1:0 y1:0, x2:0 y2:1,
+                                stop:0 #f0f0f0, stop:1 #b0b0b0);
+}
+
+#helpButton {
+    background: #333;
+    border: 1px solid #555;
+    border-radius: 10px;
+    font-size: 10pt;
+    font-weight: bold;
+    padding: 0px;
+    min-width: 20px;
+    min-height: 20px;
+}
+#helpButton:hover {
+    background: #444;
+}
+
+/* =======================
+   Заголовки и метки
+   ======================= */
+#mainTitle {
+    font-size: 28pt;
+    font-weight: bold;
+    color: #ffffff;
+    letter-spacing: 1px;
+    padding: 6px 20px;
+    background: qlineargradient(x1:0 y1:0, x2:1 y2:0,
+                                stop:0 #111111, stop:0.5 #444444, stop:1 #111111);
+    border-radius: 16px;
+    margin-bottom: 15px;
+}
+
+#creditLabel {
+    color: #888;
+    font-size: 11pt;
+}
+
+QLabel {
+    color: #ddd;
+}
+
+/* =======================
+   Таблицы и деревья
+   ======================= */
+QTableWidget, QTreeWidget {
+    background-color: #111;
+    color: #fff;
+    gridline-color: #333;
+    outline: none;
+    border: none;
+    font-size: 9pt;
+}
+QTreeWidget::item {
+    padding: 1px 3px;
+}
+QHeaderView::section {
+    background-color: #222;
+    color: #fff;
+    padding: 2px 4px;
+    border: 1px solid #333;
+    font-size: 9pt;
+}
+QTableWidget::item:selected, QTreeWidget::item:selected {
+    background-color: #444;
+}
+
+/* =======================
+   Скроллбары
+   ======================= */
+QScrollBar:vertical, QScrollBar:horizontal {
+    background: #1e1e1e;
+    border: none;
+    border-radius: 4px;
+    margin: 1px;
+    width: 10px;
+    height: 10px;
+}
+QScrollBar::handle:vertical, QScrollBar::handle:horizontal {
+    background: #3a3a3a;
+    border-radius: 4px;
+    min-height: 16px;
+    min-width: 16px;
+}
+QScrollBar::handle:vertical:hover, QScrollBar::handle:horizontal:hover {
+    background: #4f4f4f;
+}
+QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical,
+QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {
+    width: 0px;
+    height: 0px;
+}
+QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical,
+QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {
+    background: none;
+}
+
+/* =======================
+   Чекбоксы
+   ======================= */
+QCheckBox {
+    color: #fff;
+    font-size: 9pt;
+}
+QCheckBox::indicator {
+    width: 14px;
+    height: 14px;
+}
+QCheckBox::indicator:unchecked {
+    border: 1px solid #888;
+    background: #333;
+}
+QCheckBox::indicator:checked {
+    border: 1px solid #888;
+    background: #5a9;
+}
+
+/* =======================
+   Вкладки
+   ======================= */
+QTabWidget::pane {
+    border: 1px solid #333;
+    background: #1e1e1e;
+}
+QTabBar::tab {
+    background: #2a2a2a;
+    color: #ccc;
+    padding: 3px 8px;
+    margin-right: 1px;
+    font-size: 9pt;
+}
+QTabBar::tab:selected {
+    background: #3a3a3a;
+    color: #fff;
+}
+QTabBar::tab:hover {
+    background: #3a3a3a;
+}
+
+/* =======================
+   Поля ввода
+   ======================= */
+QLineEdit {
+    background-color: #2a2a2a;
+    border: 1px solid #555;
+    border-radius: 3px;
+    padding: 3px 5px;
+    color: #fff;
+    font-size: 9pt;
+}
+QLineEdit:focus {
+    border-color: #777;
+}
+
+/* =======================
+   ExtraPage – ещё компактнее
+   ======================= */
+#extraTitle {
+    font-size: 16pt;
+    font-weight: bold;
+    margin-bottom: 6px;
+}
+
+#drweb, #uac, #hosts, #clean, #assoc, #add_startup, #remove_startup,
+#safe, #normal, #vt, #always_on_top, #sticky_replace, #sticky_restore,
+#utilman_replace, #utilman_restore, #reset_shell, #shell_with_app {
+    min-width: 140px;
+    min-height: 26px;
+    font-size: 9pt;
+    padding: 3px 6px;
+}
+
+/* Парные кнопки ещё уже */
+#add_startup, #remove_startup, #sticky_replace, #sticky_restore,
+#utilman_replace, #utilman_restore {
+    min-width: 120px;
+}
