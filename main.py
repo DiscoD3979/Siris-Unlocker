@@ -1,9 +1,10 @@
 import sys
 import ctypes
 import os
+import time
 from PySide6.QtWidgets import QApplication, QSplashScreen
-from PySide6.QtCore import Qt, QTimer
-from PySide6.QtGui import QPixmap, QPainter, QColor, QFont
+from PySide6.QtCore import Qt, QTimer, QPropertyAnimation, QEasingCurve
+from PySide6.QtGui import QPixmap, QPainter, QColor, QFont, QLinearGradient, QBrush
 
 # ------------------------------------------------------------
 def is_admin():
@@ -31,44 +32,70 @@ class SplashScreen(QSplashScreen):
         self.setAttribute(Qt.WA_TranslucentBackground)
         self.progress = 0
         self.message = "Старт..."
+        self.animation = QPropertyAnimation(self, b"windowOpacity")
+        self.animation.setDuration(300)
+        self.animation.setStartValue(0.0)
+        self.animation.setEndValue(1.0)
+        self.animation.setEasingCurve(QEasingCurve.OutCubic)
+
+    def showEvent(self, event):
+        super().showEvent(event)
+        self.animation.start()
 
     def set_progress(self, value, message=""):
         self.progress = value
         self.message = message
         self.repaint()
+        # Небольшая задержка, чтобы пользователь успел увидеть этап
+        QApplication.processEvents()
+        time.sleep(0.15)
 
     def drawContents(self, painter):
         painter.setRenderHint(QPainter.Antialiasing)
 
-        # Фон (чуть более прозрачный)
-        painter.fillRect(self.rect(), QColor(30, 30, 30, 200))
+        # Полупрозрачный фон с градиентом (как в старом дизайне)
+        gradient = QLinearGradient(0, 0, 0, self.height())
+        gradient.setColorAt(0, QColor(30, 30, 30, 200))
+        gradient.setColorAt(1, QColor(20, 20, 20, 200))
+        painter.fillRect(self.rect(), QBrush(gradient))
 
+        # Заголовок с символами
         painter.setPen(QColor(255, 255, 255))
-        painter.setFont(QFont("Segoe UI", 20, QFont.Bold))
-
-        # Заголовок
+        title_font = QFont("Segoe UI", 22, QFont.Bold)
+        painter.setFont(title_font)
         painter.drawText(self.rect().adjusted(0, 50, 0, -100), Qt.AlignCenter, "⋆༺ Siris & Unlocker ༻⋆")
 
         # Сообщение
-        painter.setFont(QFont("Segoe UI", 10))
-        painter.drawText(self.rect().adjusted(0, 120, 0, -80), Qt.AlignCenter, self.message)
+        painter.setPen(QColor(200, 200, 200))
+        msg_font = QFont("Segoe UI", 10)
+        painter.setFont(msg_font)
+        painter.drawText(self.rect().adjusted(0, 130, 0, -70), Qt.AlignCenter, self.message)
 
         # Прогресс-бар
-        bar_width, bar_height = 300, 25
+        bar_width, bar_height = 300, 6
         bar_x = (self.width() - bar_width) // 2
-        bar_y = self.height() - 80
+        bar_y = self.height() - 50
 
-        painter.setPen(QColor(80, 80, 80))
-        painter.drawRect(bar_x, bar_y, bar_width, bar_height)
+        painter.setPen(Qt.NoPen)
+        painter.setBrush(QColor(60, 60, 60))
+        painter.drawRoundedRect(bar_x, bar_y, bar_width, bar_height, 3, 3)
 
         fill_width = int(bar_width * self.progress / 100)
         if fill_width > 0:
-            painter.fillRect(bar_x + 1, bar_y + 1, fill_width - 2, bar_height - 2, QColor(90, 150, 90))
+            painter.setBrush(QColor("#430261"))
+            painter.drawRoundedRect(bar_x, bar_y, fill_width, bar_height, 3, 3)
 
-        # Версия (поднята выше)
+        # Процент выполнения
+        painter.setPen(QColor(180, 180, 180))
+        percent_font = QFont("Segoe UI", 8)
+        painter.setFont(percent_font)
+        painter.drawText(bar_x + bar_width + 10, bar_y + bar_height, f"{self.progress}%")
+
+        # Версия
         painter.setPen(QColor(150, 150, 150))
-        painter.setFont(QFont("Segoe UI", 9))
-        painter.drawText(self.rect().adjusted(0, -30, 0, -5), Qt.AlignHCenter | Qt.AlignBottom, "версия 2.5.3")
+        ver_font = QFont("Segoe UI", 8)
+        painter.setFont(ver_font)
+        painter.drawText(self.rect().adjusted(0, -20, 0, -5), Qt.AlignHCenter | Qt.AlignBottom, "версия 3.0.7")
 
 # ------------------------------------------------------------
 def main():

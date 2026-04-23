@@ -8,7 +8,7 @@ import json
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QTableWidget,
     QTableWidgetItem, QHeaderView, QMenu, QAbstractItemView, QMessageBox,
-    QTabWidget, QInputDialog, QLineEdit, QFileDialog, QCheckBox
+    QTabWidget, QInputDialog, QLineEdit, QFileDialog
 )
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QColor
@@ -38,6 +38,29 @@ from core.quarantine import add_to_quarantine, move_file_to_quarantine
 from core.last_scan import get_last_scan_time, set_last_scan_time, MSK_TZ
 
 # ------------------------------------------------------------
+# Undo/Redo менеджер (глобальный для страницы автозагрузок)
+# ------------------------------------------------------------
+class UndoRedoManager:
+    def __init__(self, max_history=5):
+        self.history = []
+        self.max_history = max_history
+
+    def push_action(self, action):
+        """Добавляет действие в историю. action - словарь с полным контекстом для отката."""
+        self.history.append(action)
+        if len(self.history) > self.max_history:
+            self.history.pop(0)
+
+    def pop_action(self):
+        """Извлекает последнее действие для отката."""
+        if self.history:
+            return self.history.pop()
+        return None
+
+# Глобальный менеджер для всех вкладок
+undo_manager = UndoRedoManager()
+
+# ------------------------------------------------------------
 # Базовый класс с контекстным меню (общий для всех)
 # ------------------------------------------------------------
 class BaseStartupTab(QWidget):
@@ -60,10 +83,11 @@ class BaseStartupTab(QWidget):
         self.help_btn.clicked.connect(self.show_help)
         top_layout.addWidget(self.help_btn)
 
-        self.reset_new_btn = QPushButton("Сбросить новые")
-        self.reset_new_btn.setObjectName("resetNewButton")
-        self.reset_new_btn.clicked.connect(self.reset_new)
-        top_layout.addWidget(self.reset_new_btn)
+        # Кнопка "Вернуть обратно" (Undo) вместо "Сбросить новые"
+        self.undo_btn = QPushButton("Вернуть обратно")
+        self.undo_btn.setObjectName("undoButton")
+        self.undo_btn.clicked.connect(self.undo_last_action)
+        top_layout.addWidget(self.undo_btn)
 
         self.refresh_btn = QPushButton("Обновить")
         self.refresh_btn.setObjectName("refreshButton")
@@ -113,44 +137,76 @@ class BaseStartupTab(QWidget):
                 self.table.setColumnWidth(col, 100)
 
         self.table.horizontalHeader().setStretchLastSection(True)
-        # self._highlight_new_entries()
 
-    def _is_new_entry(self, entry):
-        if self.last_scan_time is None:
-            return False
-        created_str = entry.get('created', '')
-        if not created_str or created_str == "Неизвестно":
-            return False
-        for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%dT%H:%M:%S", "%H:%M/%d.%m.%Y"):
-            try:
-                dt = datetime.datetime.strptime(created_str, fmt)
-                if dt.tzinfo is None:
-                    dt = dt.replace(tzinfo=MSK_TZ)
-                else:
-                    dt = dt.astimezone(MSK_TZ)
-                return dt > self.last_scan_time
-            except ValueError:
-                continue
-        return False
+    def _open_folder(self, entry):
+        """Универсальное открытие папки с исполняемым файлом записи."""
+        cmd = entry.get('command', '')
+        if not cmd:
+            QMessageBox.information(self, "Информация", "Не удалось определить путь к файлу.")
+            return
 
-    def _highlight_new_entries(self):
-        for row, entry in enumerate(self.entries):
-            if self._is_new_entry(entry):
-                for col in range(self.table.columnCount()):
-                    item = self.table.item(row, col)
-                    if item:
-                        item.setBackground(self.new_color)
+        # Простая эвристика: извлекаем путь из команды
+        cmd_clean = cmd.strip('"').strip("'")
+        parts = cmd_clean.split()
+        file_path = None
+        for part in parts:
+            if os.path.exists(part):
+                file_path = part
+                break
+        if not file_path:
+            file_path = parts[0] if parts else cmd_clean
 
-    def reset_new(self):
-        self.last_scan_time = datetime.datetime.now(MSK_TZ)
-        set_last_scan_time(self.last_scan_time)
-        self.load_data()
+        if os.path.exists(file_path):
+            folder = os.path.dirname(file_path)
+            if os.path.isdir(folder):
+                os.startfile(folder)
+            else:
+                QMessageBox.information(self, "Информация", "Папка не найдена.")
+        else:
+            QMessageBox.information(self, "Информация", f"Файл не существует:\n{file_path}")
 
-    def _delete_selected(self):
-        """Массовое удаление выбранных записей (переопределяется в наследниках)."""
-        pass
+    def undo_last_action(self):
+        """Откат последнего действия (общий для всех вкладок)."""
+        action = undo_manager.pop_action()
+        if not action:
+            QMessageBox.information(self, "Информация", "Нет действий для отмены.")
+            return
 
-    # Вспомогательные методы для работы с реестром (используются в AppInitDLLsTab)
+        try:
+            if action['type'] == 'add':
+                # Удаляем добавленный параметр
+                hive = action['hive']
+                path = action['path']
+                name = action['name']
+                with winreg.OpenKey(hive, path, 0, winreg.KEY_SET_VALUE) as key:
+                    winreg.DeleteValue(key, name)
+                QMessageBox.information(self, "Отмена", f"Удалён параметр {name}")
+
+            elif action['type'] == 'delete':
+                # Восстанавливаем удалённый параметр
+                hive = action['hive']
+                path = action['path']
+                name = action['name']
+                value = action['old_value']
+                with winreg.OpenKey(hive, path, 0, winreg.KEY_SET_VALUE) as key:
+                    winreg.SetValueEx(key, name, 0, winreg.REG_SZ, value)
+                QMessageBox.information(self, "Отмена", f"Восстановлен параметр {name}")
+
+            elif action['type'] == 'edit':
+                # Возвращаем старое значение
+                hive = action['hive']
+                path = action['path']
+                name = action['name']
+                old_value = action['old_value']
+                with winreg.OpenKey(hive, path, 0, winreg.KEY_SET_VALUE) as key:
+                    winreg.SetValueEx(key, name, 0, winreg.REG_SZ, old_value)
+                QMessageBox.information(self, "Отмена", f"Возвращено значение параметра {name}")
+
+            self.load_data()
+        except Exception as e:
+            QMessageBox.critical(self, "Ошибка", f"Не удалось отменить действие: {e}")
+
+    # Вспомогательные методы для реестра
     def _read_reg_value(self, hive, path, name):
         try:
             access = winreg.KEY_READ | winreg.KEY_WOW64_64KEY
@@ -248,6 +304,7 @@ class RegistryRunTab(BaseStartupTab):
                 'path': entry['path']
             })
             disable_registry_entry(entry['hive'], entry['path'], entry['name'])
+        undo_manager.push_action({'tab': 'RegistryRun', 'description': f'Удалено {len(selected_rows)} записей'})
         self.load_data()
 
     def show_help(self):
@@ -274,6 +331,7 @@ class RegistryRunTab(BaseStartupTab):
             with winreg.OpenKey(hive_handle, hive_path, 0, winreg.KEY_SET_VALUE) as key:
                 winreg.SetValueEx(key, name, 0, winreg.REG_SZ, command)
             QMessageBox.information(self, "Успех", "Запись добавлена.")
+            undo_manager.push_action({'tab': 'RegistryRun', 'description': f'Добавлена запись {name}'})
             self.load_data()
         except Exception as e:
             QMessageBox.critical(self, "Ошибка", f"Не удалось добавить запись: {e}")
@@ -286,6 +344,7 @@ class RegistryRunTab(BaseStartupTab):
                 with winreg.OpenKey(entry['hive'], entry['path'], 0, winreg.KEY_SET_VALUE) as key:
                     winreg.SetValueEx(key, entry['name'], 0, winreg.REG_SZ, new_value)
                 QMessageBox.information(self, "Успех", "Значение обновлено.")
+                undo_manager.push_action({'tab': 'RegistryRun', 'description': f'Изменена запись {entry["name"]}'})
                 self.load_data()
             except Exception as e:
                 QMessageBox.critical(self, "Ошибка", f"Не удалось изменить значение: {e}")
@@ -305,14 +364,8 @@ class RegistryRunTab(BaseStartupTab):
             'path': entry['path']
         })
         if disable_registry_entry(entry['hive'], entry['path'], entry['name']):
+            undo_manager.push_action({'tab': 'RegistryRun', 'description': f'Удалена запись {entry["name"]}'})
             self.load_data()
-
-    def _open_folder(self, entry):
-        cmd = entry['command']
-        if cmd and os.path.exists(cmd):
-            folder = os.path.dirname(cmd)
-            if os.path.isdir(folder):
-                os.startfile(folder)
 
 # ------------------------------------------------------------
 # Вкладка RunOnce (реестр)
@@ -396,6 +449,7 @@ class RegistryRunOnceTab(BaseStartupTab):
                 'path': entry['path']
             })
             disable_registry_entry(entry['hive'], entry['path'], entry['name'])
+        undo_manager.push_action({'tab': 'RegistryRunOnce', 'description': f'Удалено {len(selected_rows)} записей'})
         self.load_data()
 
     def show_help(self):
@@ -421,6 +475,7 @@ class RegistryRunOnceTab(BaseStartupTab):
             with winreg.OpenKey(hive_handle, hive_path, 0, winreg.KEY_SET_VALUE) as key:
                 winreg.SetValueEx(key, name, 0, winreg.REG_SZ, command)
             QMessageBox.information(self, "Успех", "Запись добавлена.")
+            undo_manager.push_action({'tab': 'RegistryRunOnce', 'description': f'Добавлена запись {name}'})
             self.load_data()
         except Exception as e:
             QMessageBox.critical(self, "Ошибка", f"Не удалось добавить запись: {e}")
@@ -433,6 +488,7 @@ class RegistryRunOnceTab(BaseStartupTab):
                 with winreg.OpenKey(entry['hive'], entry['path'], 0, winreg.KEY_SET_VALUE) as key:
                     winreg.SetValueEx(key, entry['name'], 0, winreg.REG_SZ, new_value)
                 QMessageBox.information(self, "Успех", "Значение обновлено.")
+                undo_manager.push_action({'tab': 'RegistryRunOnce', 'description': f'Изменена запись {entry["name"]}'})
                 self.load_data()
             except Exception as e:
                 QMessageBox.critical(self, "Ошибка", f"Не удалось изменить значение: {e}")
@@ -452,14 +508,8 @@ class RegistryRunOnceTab(BaseStartupTab):
             'path': entry['path']
         })
         if disable_registry_entry(entry['hive'], entry['path'], entry['name']):
+            undo_manager.push_action({'tab': 'RegistryRunOnce', 'description': f'Удалена запись {entry["name"]}'})
             self.load_data()
-
-    def _open_folder(self, entry):
-        cmd = entry['command']
-        if cmd and os.path.exists(cmd):
-            folder = os.path.dirname(cmd)
-            if os.path.isdir(folder):
-                os.startfile(folder)
 
 # ------------------------------------------------------------
 # Вкладка Winlogon
@@ -499,10 +549,14 @@ class WinlogonTab(BaseStartupTab):
                 edit_action = open_folder_action = None
         else:
             delete_action = edit_action = open_folder_action = None
+        menu.addSeparator()
+        add_action = menu.addAction("Добавить параметр")   # Новый пункт
         action = menu.exec(self.table.mapToGlobal(position))
 
         if action == help_action:
             self.show_help()
+        elif add_action and action == add_action:
+            self._add_parameter()
         elif selected_rows:
             if action == delete_action:
                 if len(selected_rows) > 1:
@@ -513,6 +567,42 @@ class WinlogonTab(BaseStartupTab):
                 self._edit_value(self.entries[selected_rows[0]])
             elif action == open_folder_action and len(selected_rows) == 1:
                 self._open_folder(self.entries[selected_rows[0]])
+
+    def _add_parameter(self):
+        name, ok = QInputDialog.getItem(self, "Выбор параметра", "Какой параметр добавить?", ["Userinit", "Shell"], 0, False)
+        if not ok:
+            return
+        value, ok = QInputDialog.getText(self, "Добавление параметра", f"Значение для {name}:")
+        if not ok:
+            return
+        try:
+            with winreg.OpenKey(self.hive, self.winlogon_path, 0, winreg.KEY_SET_VALUE | winreg.KEY_QUERY_VALUE) as key:
+                # Ищем уникальное имя для нового параметра (например, Userinit_1, Shell_2)
+                base_name = name
+                counter = 1
+                new_name = base_name
+                while True:
+                    try:
+                        winreg.QueryValueEx(key, new_name)
+                        new_name = f"{base_name}_{counter}"
+                        counter += 1
+                    except FileNotFoundError:
+                        break
+                winreg.SetValueEx(key, new_name, 0, winreg.REG_SZ, value)
+                undo_manager.push_action({
+                    'tab': 'Winlogon',
+                    'type': 'add',
+                    'hive': self.hive,
+                    'path': self.winlogon_path,
+                    'name': new_name,
+                    'old_value': None,
+                    'new_value': value,
+                    'description': f'Добавлен параметр {new_name}'
+                })
+            QMessageBox.information(self, "Успех", f"Параметр {new_name} добавлен.")
+            self.load_data()
+        except Exception as e:
+            QMessageBox.critical(self, "Ошибка", f"Не удалось добавить параметр: {e}")
 
     def _delete_selected(self):
         selected_rows = list(set(idx.row() for idx in self.table.selectedIndexes()))
@@ -530,6 +620,7 @@ class WinlogonTab(BaseStartupTab):
                     winreg.DeleteValue(key, entry['name'])
             except Exception:
                 pass
+        undo_manager.push_action({'tab': 'Winlogon', 'description': f'Удалено {len(selected_rows)} параметров'})
         self.load_data()
 
     def show_help(self):
@@ -542,9 +633,20 @@ class WinlogonTab(BaseStartupTab):
         )
         if ok and new_value != entry['command']:
             try:
+                old_value = entry['command']
                 with winreg.OpenKey(self.hive, self.winlogon_path, 0, winreg.KEY_SET_VALUE) as key:
                     winreg.SetValueEx(key, entry['name'], 0, winreg.REG_SZ, new_value)
                 QMessageBox.information(self, "Успех", "Значение обновлено.")
+                undo_manager.push_action({
+                    'tab': 'Winlogon',
+                    'type': 'edit',
+                    'hive': self.hive,
+                    'path': self.winlogon_path,
+                    'name': entry['name'],
+                    'old_value': old_value,
+                    'new_value': new_value,
+                    'description': f'Изменён параметр {entry["name"]}'
+                })
                 self.load_data()
             except Exception as e:
                 QMessageBox.critical(self, "Ошибка", f"Не удалось изменить значение:\n{e}")
@@ -556,23 +658,23 @@ class WinlogonTab(BaseStartupTab):
         if reply != QMessageBox.Yes:
             return
         try:
+            # Сохраняем текущее значение для возможного отката
+            old_value = entry['command']
             with winreg.OpenKey(self.hive, self.winlogon_path, 0, winreg.KEY_SET_VALUE) as key:
                 winreg.DeleteValue(key, entry['name'])
             QMessageBox.information(self, "Успех", "Параметр удалён.")
+            undo_manager.push_action({
+                'tab': 'Winlogon',
+                'type': 'delete',
+                'hive': self.hive,
+                'path': self.winlogon_path,
+                'name': entry['name'],
+                'old_value': old_value,
+                'description': f'Удалён параметр {entry["name"]}'
+            })
             self.load_data()
         except Exception as e:
             QMessageBox.critical(self, "Ошибка", f"Не удалось удалить параметр: {e}")
-
-    def _open_folder(self, entry):
-        match = re.search(r'([a-zA-Z]:[^,\s]+)', entry['command'])
-        if match:
-            path = match.group(1)
-            if os.path.exists(path):
-                folder = os.path.dirname(path)
-                if os.path.isdir(folder):
-                    os.startfile(folder)
-                    return
-        QMessageBox.information(self, "Информация", "Не удалось определить папку.")
 
 # ------------------------------------------------------------
 # Вкладка ShellServiceObjects
@@ -640,6 +742,7 @@ class ShellServiceObjectsTab(BaseStartupTab):
                     winreg.DeleteValue(key, entry['name'])
             except Exception:
                 pass
+        undo_manager.push_action({'tab': 'ShellServiceObjects', 'description': f'Удалено {len(selected_rows)} записей'})
         self.load_data()
 
     def show_help(self):
@@ -656,6 +759,7 @@ class ShellServiceObjectsTab(BaseStartupTab):
             with winreg.OpenKey(self.hive, self.path, 0, winreg.KEY_SET_VALUE) as key:
                 winreg.DeleteValue(key, entry['name'])
             QMessageBox.information(self, "Успех", "Запись удалена.")
+            undo_manager.push_action({'tab': 'ShellServiceObjects', 'description': f'Удалена запись {entry["name"]}'})
             self.load_data()
         except Exception as e:
             QMessageBox.critical(self, "Ошибка", f"Не удалось удалить запись: {e}")
@@ -669,16 +773,14 @@ class ShellServiceObjectsTab(BaseStartupTab):
             QMessageBox.information(self, "Информация", "Не удалось открыть редактор реестра.")
 
 # ------------------------------------------------------------
-# Вкладка AppInit_DLLs (ПОЛНОСТЬЮ ПЕРЕРАБОТАНА)
+# Вкладка AppInit_DLLs
 # ------------------------------------------------------------
 class AppInitDLLsTab(BaseStartupTab):
     def __init__(self):
-        # Сначала задаём атрибуты, чтобы они были доступны в load_data()
         self.win_path = r"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Windows"
         self.hive_hklm = winreg.HKEY_LOCAL_MACHINE
         self.cursor_path = r"Control Panel\Desktop"
         self.hive_hkcu = winreg.HKEY_CURRENT_USER
-        # Теперь вызываем конструктор базового класса (он вызовет load_data)
         super().__init__(["Параметр", "Значение", "Дата создания", "Примечание"])
 
     def _read_reg_value(self, hive, path, name):
@@ -706,7 +808,7 @@ class AppInitDLLsTab(BaseStartupTab):
 
     def load_data(self):
         entries = []
-        # 1. AppInit_DLLs (REG_SZ)
+        # 1. AppInit_DLLs
         appinit_val = self._read_reg_value(self.hive_hklm, self.win_path, "AppInit_DLLs")
         entries.append({
             'display_order': ['name', 'command', 'created', 'note'],
@@ -719,7 +821,7 @@ class AppInitDLLsTab(BaseStartupTab):
             'type': 'appinit',
             'reg_type': winreg.REG_SZ
         })
-        # 2. LoadAppInit_DLLs (REG_DWORD)
+        # 2. LoadAppInit_DLLs
         load_val = self._read_reg_value(self.hive_hklm, self.win_path, "LoadAppInit_DLLs")
         entries.append({
             'display_order': ['name', 'command', 'created', 'note'],
@@ -732,7 +834,7 @@ class AppInitDLLsTab(BaseStartupTab):
             'type': 'appinit',
             'reg_type': winreg.REG_DWORD
         })
-        # 3. CMDLINE (REG_SZ)
+        # 3. CMDLINE
         cmdline_val = self._read_reg_value(self.hive_hklm, self.win_path, "CMDLINE")
         entries.append({
             'display_order': ['name', 'command', 'created', 'note'],
@@ -745,12 +847,12 @@ class AppInitDLLsTab(BaseStartupTab):
             'type': 'appinit',
             'reg_type': winreg.REG_SZ
         })
-        # 4. EnableCursorSuppression (REG_DWORD в HKCU)
+        # 4. EnableCursorSuppression
         cursor_val = self._read_reg_value(self.hive_hkcu, self.cursor_path, "EnableCursorSuppression")
         entries.append({
             'display_order': ['name', 'command', 'created', 'note'],
             'name': 'EnableCursorSuppression',
-            'command': 'Подавление' if cursor_val == 1 else 'Обычный',
+            'command': 'Вкл' if cursor_val == 1 else 'Выкл',
             'created': self._get_timestamp_str(self.hive_hkcu, self.cursor_path),
             'note': 'Курсор',
             'hive': self.hive_hkcu,
@@ -791,11 +893,11 @@ class AppInitDLLsTab(BaseStartupTab):
                                 "AppInit_DLLs: DLL, загружаемые в каждый процесс.\n"
                                 "LoadAppInit_DLLs: включает механизм AppInit.\n"
                                 "CMDLINE: дополнительные параметры командной строки.\n"
-                                "EnableCursorSuppression: управление подавлением курсора (1 — подавлять, 0 — нет).")
+                                "EnableCursorSuppression: управление подавлением курсора (Вкл/Выкл).")
 
     def _edit_value(self, entry):
         if entry['reg_type'] == winreg.REG_DWORD:
-            current = '1' if entry['command'] in ('Включено', 'Подавление') else '0'
+            current = '1' if entry['command'] == 'Вкл' else '0'
             new_val, ok = QInputDialog.getText(self, f"Изменение {entry['name']}",
                                                "Введите 1 (вкл) или 0 (откл):", QLineEdit.Normal, current)
             if ok:
@@ -811,16 +913,18 @@ class AppInitDLLsTab(BaseStartupTab):
                                                "Новое значение:", QLineEdit.Normal, entry['command'])
         if ok:
             self._write_reg_value(entry['hive'], entry['path'], entry['name'], new_val, entry['reg_type'])
+            undo_manager.push_action({'tab': 'AppInit', 'description': f'Изменён параметр {entry["name"]}'})
             self.load_data()
 
     def _toggle_value(self, entry):
         if entry['name'] == 'LoadAppInit_DLLs':
             new_state = 0 if entry['command'] == 'Включено' else 1
         elif entry['name'] == 'EnableCursorSuppression':
-            new_state = 0 if entry['command'] == 'Подавление' else 1
+            new_state = 0 if entry['command'] == 'Вкл' else 1
         else:
             return
         self._write_reg_value(entry['hive'], entry['path'], entry['name'], new_state, winreg.REG_DWORD)
+        undo_manager.push_action({'tab': 'AppInit', 'description': f'Переключён параметр {entry["name"]}'})
         self.load_data()
 
 # ------------------------------------------------------------
@@ -878,6 +982,7 @@ class KnownDLLsTab(BaseStartupTab):
                     winreg.DeleteValue(key, entry['name'])
             except Exception:
                 pass
+        undo_manager.push_action({'tab': 'KnownDLLs', 'description': f'Удалено {len(selected_rows)} записей'})
         self.load_data()
 
     def show_help(self):
@@ -960,6 +1065,7 @@ class StartupFoldersTab(BaseStartupTab):
                 'command': entry['command'],
                 'quarantine_path': quarantine_path
             })
+        undo_manager.push_action({'tab': 'StartupFolders', 'description': f'Удалено {len(selected_rows)} файлов'})
         self.load_data()
 
     def show_help(self):
@@ -981,6 +1087,7 @@ class StartupFoldersTab(BaseStartupTab):
             dest = os.path.join(target_folder, os.path.basename(file_path))
             shutil.copy2(file_path, dest)
             QMessageBox.information(self, "Успех", f"Файл скопирован в {target_folder}")
+            undo_manager.push_action({'tab': 'StartupFolders', 'description': f'Добавлен файл {os.path.basename(file_path)}'})
             self.load_data()
         except Exception as e:
             QMessageBox.critical(self, "Ошибка", f"Не удалось скопировать файл: {e}")
@@ -999,13 +1106,8 @@ class StartupFoldersTab(BaseStartupTab):
             'command': entry['command'],
             'quarantine_path': quarantine_path
         })
+        undo_manager.push_action({'tab': 'StartupFolders', 'description': f'Удалён файл {entry["name"]}'})
         self.load_data()
-
-    def _open_folder(self, entry):
-        if os.path.exists(entry['command']):
-            folder = os.path.dirname(entry['command'])
-            if os.path.isdir(folder):
-                os.startfile(folder)
 
 # ------------------------------------------------------------
 # Вкладка Службы
@@ -1072,6 +1174,7 @@ class ServicesTab(BaseStartupTab):
                 subprocess.run(['sc', 'delete', entry['name']], capture_output=True, check=True)
             except Exception:
                 pass
+        undo_manager.push_action({'tab': 'Services', 'description': f'Удалено {len(selected_rows)} служб'})
         self.load_data()
 
     def show_help(self):
@@ -1087,16 +1190,10 @@ class ServicesTab(BaseStartupTab):
         try:
             subprocess.run(['sc', 'delete', entry['name']], capture_output=True, check=True)
             QMessageBox.information(self, "Успех", "Служба удалена.")
+            undo_manager.push_action({'tab': 'Services', 'description': f'Удалена служба {entry["name"]}'})
             self.load_data()
         except Exception as e:
             QMessageBox.critical(self, "Ошибка", f"Не удалось удалить службу: {e}")
-
-    def _open_folder(self, entry):
-        cmd = entry['command']
-        if cmd and os.path.exists(cmd):
-            folder = os.path.dirname(cmd)
-            if os.path.isdir(folder):
-                os.startfile(folder)
 
     def _edit_service(self, entry):
         new_path, ok = QInputDialog.getText(self, "Изменение пути",
@@ -1105,6 +1202,7 @@ class ServicesTab(BaseStartupTab):
             try:
                 subprocess.run(['sc', 'config', entry['name'], 'binPath=', new_path], capture_output=True, check=True)
                 QMessageBox.information(self, "Успех", "Путь службы изменён.")
+                undo_manager.push_action({'tab': 'Services', 'description': f'Изменён путь службы {entry["name"]}'})
                 self.load_data()
             except Exception as e:
                 QMessageBox.critical(self, "Ошибка", f"Не удалось изменить путь: {e}")
@@ -1179,6 +1277,7 @@ class ScheduledTasksTab(BaseStartupTab):
                 subprocess.run(['schtasks', '/delete', '/tn', entry['name'], '/f'], capture_output=True, check=True)
             except Exception:
                 pass
+        undo_manager.push_action({'tab': 'ScheduledTasks', 'description': f'Удалено {len(selected_rows)} задач'})
         self.load_data()
 
     def show_help(self):
@@ -1194,6 +1293,7 @@ class ScheduledTasksTab(BaseStartupTab):
         try:
             subprocess.run(['schtasks', '/delete', '/tn', entry['name'], '/f'], capture_output=True, check=True)
             QMessageBox.information(self, "Успех", "Задача удалена.")
+            undo_manager.push_action({'tab': 'ScheduledTasks', 'description': f'Удалена задача {entry["name"]}'})
             self.load_data()
         except Exception as e:
             QMessageBox.critical(self, "Ошибка", f"Не удалось удалить задачу: {e}")
@@ -1212,6 +1312,7 @@ class ScheduledTasksTab(BaseStartupTab):
         try:
             subprocess.run(cmd, capture_output=True, check=True)
             QMessageBox.information(self, "Успех", "Состояние изменено.")
+            undo_manager.push_action({'tab': 'ScheduledTasks', 'description': f'Изменено состояние задачи {entry["name"]}'})
             self.load_data()
         except Exception as e:
             QMessageBox.critical(self, "Ошибка", f"Не удалось изменить состояние: {e}")
@@ -1250,6 +1351,7 @@ class ScheduledTasksTab(BaseStartupTab):
             subprocess.run(['schtasks', '/create', '/tn', name, '/tr', command, trigger, '/f'],
                            capture_output=True, check=True)
             QMessageBox.information(self, "Успех", "Задача создана.")
+            undo_manager.push_action({'tab': 'ScheduledTasks', 'description': f'Создана задача {name}'})
             self.load_data()
         except Exception as e:
             QMessageBox.critical(self, "Ошибка", f"Не удалось создать задачу: {e}")
@@ -1333,6 +1435,7 @@ class ActiveSetupTab(BaseStartupTab):
                     winreg.DeleteKey(self.hive, reg_path)
                 except Exception:
                     pass
+        undo_manager.push_action({'tab': 'ActiveSetup', 'description': f'Удалено {len(selected_rows)} компонентов'})
         self.load_data()
 
     def show_help(self):
@@ -1355,6 +1458,7 @@ class ActiveSetupTab(BaseStartupTab):
             with winreg.CreateKey(self.hive, f"{reg_path}\\{name}") as key:
                 winreg.SetValueEx(key, "StubPath", 0, winreg.REG_SZ, command)
             QMessageBox.information(self, "Успех", "Компонент добавлен.")
+            undo_manager.push_action({'tab': 'ActiveSetup', 'description': f'Добавлен компонент {name}'})
             self.load_data()
         except Exception as e:
             QMessageBox.critical(self, "Ошибка", f"Не удалось добавить компонент: {e}")
@@ -1372,6 +1476,7 @@ class ActiveSetupTab(BaseStartupTab):
                 with winreg.OpenKey(self.hive, reg_path, 0, winreg.KEY_SET_VALUE) as key:
                     winreg.SetValueEx(key, "StubPath", 0, winreg.REG_SZ, new_value)
                 QMessageBox.information(self, "Успех", "Значение обновлено.")
+                undo_manager.push_action({'tab': 'ActiveSetup', 'description': f'Изменён компонент {entry["name"]}'})
                 self.load_data()
             except Exception as e:
                 QMessageBox.critical(self, "Ошибка", f"Не удалось изменить значение: {e}")
@@ -1389,16 +1494,10 @@ class ActiveSetupTab(BaseStartupTab):
                 reg_path = match.group(1)
                 winreg.DeleteKey(self.hive, reg_path)
             QMessageBox.information(self, "Успех", "Компонент удалён.")
+            undo_manager.push_action({'tab': 'ActiveSetup', 'description': f'Удалён компонент {entry["name"]}'})
             self.load_data()
         except Exception as e:
             QMessageBox.critical(self, "Ошибка", f"Не удалось удалить компонент: {e}")
-
-    def _open_folder(self, entry):
-        cmd = entry['command']
-        if cmd and os.path.exists(cmd):
-            folder = os.path.dirname(cmd)
-            if os.path.isdir(folder):
-                os.startfile(folder)
 
 # ------------------------------------------------------------
 # Вкладка Logon Scripts
@@ -1473,6 +1572,7 @@ class LogonScriptsTab(BaseStartupTab):
                     winreg.DeleteValue(key, entry['name'])
             except Exception:
                 pass
+        undo_manager.push_action({'tab': 'LogonScripts', 'description': f'Удалено {len(selected_rows)} скриптов'})
         self.load_data()
 
     def show_help(self):
@@ -1488,6 +1588,7 @@ class LogonScriptsTab(BaseStartupTab):
             with winreg.OpenKey(self.hive, self.reg_path, 0, winreg.KEY_SET_VALUE) as key:
                 winreg.SetValueEx(key, "UserInitMprLogonScript", 0, winreg.REG_SZ, command)
             QMessageBox.information(self, "Успех", "Скрипт добавлен.")
+            undo_manager.push_action({'tab': 'LogonScripts', 'description': 'Добавлен скрипт входа'})
             self.load_data()
         except Exception as e:
             QMessageBox.critical(self, "Ошибка", f"Не удалось добавить скрипт: {e}")
@@ -1500,6 +1601,7 @@ class LogonScriptsTab(BaseStartupTab):
                 with winreg.OpenKey(self.hive, self.reg_path, 0, winreg.KEY_SET_VALUE) as key:
                     winreg.SetValueEx(key, entry['name'], 0, winreg.REG_SZ, new_value)
                 QMessageBox.information(self, "Успех", "Значение обновлено.")
+                undo_manager.push_action({'tab': 'LogonScripts', 'description': 'Изменён скрипт входа'})
                 self.load_data()
             except Exception as e:
                 QMessageBox.critical(self, "Ошибка", f"Не удалось изменить значение: {e}")
@@ -1514,16 +1616,10 @@ class LogonScriptsTab(BaseStartupTab):
             with winreg.OpenKey(self.hive, self.reg_path, 0, winreg.KEY_SET_VALUE) as key:
                 winreg.DeleteValue(key, entry['name'])
             QMessageBox.information(self, "Успех", "Скрипт удалён.")
+            undo_manager.push_action({'tab': 'LogonScripts', 'description': 'Удалён скрипт входа'})
             self.load_data()
         except Exception as e:
             QMessageBox.critical(self, "Ошибка", f"Не удалось удалить скрипт: {e}")
-
-    def _open_folder(self, entry):
-        cmd = entry['command']
-        if cmd and os.path.exists(cmd):
-            folder = os.path.dirname(cmd)
-            if os.path.isdir(folder):
-                os.startfile(folder)
 
 # ------------------------------------------------------------
 # Основная страница автозагрузок

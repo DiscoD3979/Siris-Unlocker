@@ -1,5 +1,5 @@
 /* =======================
-   Базовые настройки – всё уменьшено
+   Глобальные сбросы и базовые стили
    ======================= */
 * {
     font-size: 9pt;
@@ -7,176 +7,185 @@
 }
 
 QWidget {
-    background-color: #1e1e1e;
-    color: #ffffff;
+    background-color: #121212;
+    color: #e4e4e4;
+    border: none;
 }
 
 QScrollArea, QGroupBox, QFrame {
     border: none;
-    background-color: #1e1e1e;
+    background: transparent;
 }
 
 /* =======================
    Кнопки
    ======================= */
 QPushButton {
-    background: qlineargradient(x1:0 y1:0, x2:0 y2:1,
-                                stop:0 #3a3a3a, stop:1 #2a2a2a);
-    border: 1px solid #555;
-    border-radius: 3px;
-    padding: 4px 8px;
-    color: #ffffff;
+    background-color: #1f1f1f;
+    border: 1px solid #2c2c2c;
+    border-radius: 6px;
+    padding: 5px 12px;
+    color: #e4e4e4;
 }
 QPushButton:hover {
-    background: qlineargradient(x1:0 y1:0, x2:0 y2:1,
-                                stop:0 #4a4a4a, stop:1 #3a3a3a);
+    background-color: #2a2a2a;
+    border-color: #3a3a3a;
 }
 QPushButton:pressed {
-    background: #2a2a2a;
+    background-color: #181818;
 }
 QPushButton:checked {
-    background: qlineargradient(x1:0 y1:0, x2:0 y2:1,
-                                stop:0 #5a9, stop:1 #3a7);
-    border-color: #2a7;
+    background-color: #2d2d3a;
+    border-color: #5a4a6a;
 }
 
-/* Кнопка "Назад" */
 #backButton {
-    background: #333;
-    border: 1px solid #555;
     min-width: 70px;
     padding: 3px 6px;
 }
-#backButton:hover {
-    background: #444;
-}
 
-/* Кнопки главного меню */
 #mainMenuButton {
     font-size: 13pt;
-    padding: 6px 16px;
-    min-width: 180px;
+    padding: 8px 20px;
+    min-width: 200px;
 }
 
-/* Кнопка "О программе" */
 #aboutButton {
-    background: qlineargradient(x1:0 y1:0, x2:0 y2:1,
-                                stop:0 #3a3a3a, stop:1 #2a2a2a);
-    border: 1px solid #555;
-    border-radius: 3px;
     padding: 2px 6px;
     font-size: 8pt;
-    color: #ffffff;
-}
-#aboutButton:hover {
-    background: qlineargradient(x1:0 y1:0, x2:0 y2:1,
-                                stop:0 #4a4a4a, stop:1 #3a3a3a);
 }
 
-/* Кнопки вкладок сканирования/разблокировки */
 #scanButton, #selectAllBtn, #unlockBtn, #resetNewButton, #refreshButton {
-    background: qlineargradient(x1:0 y1:0, x2:0 y2:1,
-                                stop:0 #fff, stop:1 #ccc);
-    color: black;
-    border-radius: 3px;
-    padding: 3px 8px;
-    font-size: 9pt;
+    background-color: #2a2a2a;
+    border: 1px solid #3a3a3a;
 }
 #scanButton:hover, #selectAllBtn:hover, #unlockBtn:hover,
 #resetNewButton:hover, #refreshButton:hover {
-    background: qlineargradient(x1:0 y1:0, x2:0 y2:1,
-                                stop:0 #f0f0f0, stop:1 #b0b0b0);
+    background-color: #3a3a3a;
 }
 
 #helpButton {
-    background: #333;
-    border: 1px solid #555;
+    background-color: #1f1f1f;
+    border: 1px solid #2c2c2c;
     border-radius: 10px;
-    font-size: 10pt;
     font-weight: bold;
     padding: 0px;
     min-width: 20px;
     min-height: 20px;
 }
 #helpButton:hover {
-    background: #444;
+    background-color: #2a2a2a;
 }
 
 /* =======================
-   Заголовки и метки
+   Поля ввода
    ======================= */
-#mainTitle {
-    font-size: 28pt;
-    font-weight: bold;
-    color: #ffffff;
-    letter-spacing: 1px;
-    padding: 6px 20px;
-    background: qlineargradient(x1:0 y1:0, x2:1 y2:0,
-                                stop:0 #111111, stop:0.5 #444444, stop:1 #111111);
-    border-radius: 16px;
-    margin-bottom: 15px;
+QLineEdit {
+    background-color: #0f0f0f;
+    border: 1px solid #2a2a2a;
+    border-radius: 6px;
+    padding: 5px;
+    color: #e4e4e4;
+    selection-background-color: #404060;
 }
-
-#creditLabel {
-    color: #888;
-    font-size: 11pt;
-}
-
-QLabel {
-    color: #ddd;
+QLineEdit:focus {
+    border-color: #4a4a6a;
 }
 
 /* =======================
    Таблицы и деревья
    ======================= */
-QTableWidget, QTreeWidget {
-    background-color: #111;
-    color: #fff;
-    gridline-color: #333;
+QTreeWidget, QTableWidget {
+    background-color: #0f0f0f;
+    border: 1px solid #2a2a2a;
+    border-radius: 6px;
+    color: #e4e4e4;
+    gridline-color: #2a2a2a;
     outline: none;
-    border: none;
-    font-size: 9pt;
 }
-QTreeWidget::item {
-    padding: 1px 3px;
+QTreeWidget::item, QTableWidget::item {
+    padding: 4px;
+}
+QTreeWidget::item:hover, QTableWidget::item:hover {
+    background-color: #1c1c24;
+}
+QTreeWidget::item:selected, QTableWidget::item:selected {
+    background-color: #2d2d3a;
+    color: #ffffff;
 }
 QHeaderView::section {
-    background-color: #222;
-    color: #fff;
-    padding: 2px 4px;
-    border: 1px solid #333;
-    font-size: 9pt;
+    background-color: #181818;
+    border: none;
+    padding: 6px;
+    font-weight: bold;
+    color: #e4e4e4;
 }
-QTableWidget::item:selected, QTreeWidget::item:selected {
-    background-color: #444;
+
+/* Разделители между процессами верхнего уровня */
+QTreeWidget::item:!has-children {
+    border-bottom: 1px solid #252525;
+}
+QTreeWidget::item:has-children {
+    border-bottom: none;
+}
+QTreeWidget::item:has-children QTreeWidget::item {
+    border-bottom: none;
+}
+
+/* =======================
+   Стрелки раскрытия дерева (SVG)
+   ======================= */
+QTreeWidget::branch:closed:has-children {
+    image: url(ui/icons/arrow-right.svg);
+}
+QTreeWidget::branch:open:has-children {
+    image: url(ui/icons/arrow-down.svg);
+}
+QTreeWidget::branch {
+    padding-left: 6px;
+    background: transparent;
+}
+QTreeWidget::branch:hover {
+    background: rgba(255, 255, 255, 0.05);
 }
 
 /* =======================
    Скроллбары
    ======================= */
-QScrollBar:vertical, QScrollBar:horizontal {
-    background: #1e1e1e;
-    border: none;
-    border-radius: 4px;
-    margin: 1px;
-    width: 10px;
-    height: 10px;
+QScrollBar:vertical {
+    background: transparent;
+    width: 8px;
 }
-QScrollBar::handle:vertical, QScrollBar::handle:horizontal {
+QScrollBar::handle:vertical {
+    background: #2a2a2a;
+    border-radius: 4px;
+    min-height: 20px;
+}
+QScrollBar::handle:vertical:hover {
     background: #3a3a3a;
-    border-radius: 4px;
-    min-height: 16px;
-    min-width: 16px;
 }
-QScrollBar::handle:vertical:hover, QScrollBar::handle:horizontal:hover {
-    background: #4f4f4f;
-}
-QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical,
-QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {
-    width: 0px;
+QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
     height: 0px;
 }
-QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical,
+QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
+    background: none;
+}
+
+QScrollBar:horizontal {
+    background: transparent;
+    height: 8px;
+}
+QScrollBar::handle:horizontal {
+    background: #2a2a2a;
+    border-radius: 4px;
+    min-width: 20px;
+}
+QScrollBar::handle:horizontal:hover {
+    background: #3a3a3a;
+}
+QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {
+    width: 0px;
+}
 QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {
     background: none;
 }
@@ -185,79 +194,145 @@ QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {
    Чекбоксы
    ======================= */
 QCheckBox {
-    color: #fff;
-    font-size: 9pt;
+    color: #e4e4e4;
+    spacing: 5px;
 }
 QCheckBox::indicator {
-    width: 14px;
-    height: 14px;
+    width: 16px;
+    height: 16px;
+    border: 1px solid #3a3a3a;
+    background-color: #151515;
 }
 QCheckBox::indicator:unchecked {
-    border: 1px solid #888;
-    background: #333;
+    border: 1px solid #404040;
 }
 QCheckBox::indicator:checked {
-    border: 1px solid #888;
-    background: #5a9;
+    background-color: #404060;
+    border: 1px solid #505070;
 }
 
 /* =======================
    Вкладки
    ======================= */
 QTabWidget::pane {
-    border: 1px solid #333;
-    background: #1e1e1e;
+    border: 1px solid #2a2a2a;
+    background: #0f0f0f;
+    border-radius: 6px;
 }
 QTabBar::tab {
-    background: #2a2a2a;
-    color: #ccc;
-    padding: 3px 8px;
-    margin-right: 1px;
-    font-size: 9pt;
+    background: #181818;
+    color: #c0c0c0;
+    padding: 5px 14px;
+    margin-right: 2px;
+    border: 1px solid #2a2a2a;
+    border-bottom: none;
+    border-top-left-radius: 6px;
+    border-top-right-radius: 6px;
 }
 QTabBar::tab:selected {
-    background: #3a3a3a;
-    color: #fff;
+    background: #1f1f1f;
+    color: #ffffff;
+    border-color: #3a3a3a;
 }
 QTabBar::tab:hover {
-    background: #3a3a3a;
+    background: #252525;
 }
 
 /* =======================
-   Поля ввода
+   Заголовки
    ======================= */
-QLineEdit {
-    background-color: #2a2a2a;
-    border: 1px solid #555;
-    border-radius: 3px;
-    padding: 3px 5px;
-    color: #fff;
-    font-size: 9pt;
+#mainTitle {
+    font-size: 28pt;
+    font-weight: bold;
+    color: #ffffff;
+    letter-spacing: 1px;
+    padding: 8px 24px;
+    background-color: #1a1a1a;
+    border: 1px solid #2a2a2a;
+    border-radius: 16px;
+    margin-bottom: 20px;
 }
-QLineEdit:focus {
-    border-color: #777;
+
+#creditLabel {
+    color: #888888;
+    font-size: 11pt;
+}
+
+QLabel {
+    color: #d0d0d0;
 }
 
 /* =======================
-   ExtraPage – ещё компактнее
+   ExtraPage
    ======================= */
 #extraTitle {
     font-size: 16pt;
     font-weight: bold;
-    margin-bottom: 6px;
+    margin-bottom: 8px;
+    color: #ffffff;
 }
 
 #drweb, #uac, #hosts, #clean, #assoc, #add_startup, #remove_startup,
 #safe, #normal, #vt, #always_on_top, #sticky_replace, #sticky_restore,
 #utilman_replace, #utilman_restore, #reset_shell, #shell_with_app {
     min-width: 140px;
-    min-height: 26px;
+    min-height: 28px;
     font-size: 9pt;
-    padding: 3px 6px;
+    padding: 4px 8px;
 }
 
-/* Парные кнопки ещё уже */
 #add_startup, #remove_startup, #sticky_replace, #sticky_restore,
 #utilman_replace, #utilman_restore {
     min-width: 120px;
+}
+
+/* =======================
+   Контекстное меню
+   ======================= */
+QMenu {
+    background-color: #1e1e1e;
+    border: 1px solid #3a3a3a;
+    border-radius: 6px;
+    padding: 4px 0;
+}
+QMenu::item {
+    padding: 6px 20px;
+    margin: 0 2px;
+    border-radius: 4px;
+    color: #e4e4e4;
+}
+QMenu::item:selected {
+    background-color: #404060;
+    color: #ffffff;
+}
+QMenu::separator {
+    height: 1px;
+    background-color: #2a2a2a;
+    margin: 4px 8px;
+}
+
+/* =======================
+   Кастомный переключатель
+   ======================= */
+ToggleSwitch {
+    background: transparent;
+    border: none;
+}
+
+#mainMenuButton {
+    text-align: center;           /* текст по центру */
+    padding-left: 20px;           /* отступ слева (общий) */
+}
+#mainMenuButton::icon {
+    margin-right: 16px;           /* расстояние от иконки до текста */
+}
+
+/* Тултипы (всплывающие подсказки) */
+QToolTip {
+    background-color: #1e1e1e;
+    color: #e0e0e0;
+    border: 1px solid #3a3a3a;
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-size: 9pt;
 }

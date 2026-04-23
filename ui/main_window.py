@@ -3,10 +3,10 @@ import string
 import os
 from PySide6.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
-    QPushButton, QStackedWidget
+    QPushButton, QStackedWidget, QSystemTrayIcon, QMenu, QApplication
 )
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QIcon
+from PySide6.QtGui import QIcon, QAction
 
 from ui.pages.menu_page import MenuPage
 from ui.pages.task_manager_page import TaskManagerPage
@@ -15,11 +15,11 @@ from ui.pages.unlock_page import UnlockPage
 from ui.pages.extra_page import ExtraPage
 from ui.pages.quarantine_page import QuarantinePage
 
-
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
 
+        # ... (ваш код генерации заголовка, иконки, минимального размера) ...
         title_characters = string.ascii_letters + string.digits + "!@#$%^&*()_-+=[]{};:,.<>?/`~"
         random_title = ''.join(random.choices(title_characters, k=12))
         self.setWindowTitle(random_title)
@@ -28,8 +28,9 @@ class MainWindow(QMainWindow):
         if os.path.exists(icon_path):
             self.setWindowIcon(QIcon(icon_path))
 
-        self.setMinimumSize(800, 500)
+        self.setMinimumSize(900, 600)
 
+        # ---------- Остальная инициализация интерфейса (без изменений) ----------
         central_widget = QWidget()
         main_layout = QVBoxLayout()
         main_layout.setContentsMargins(10, 10, 10, 10)
@@ -63,8 +64,72 @@ class MainWindow(QMainWindow):
         main_layout.addWidget(self.stacked_widget)
         central_widget.setLayout(main_layout)
         self.setCentralWidget(central_widget)
-        self.setWindowFlags(self.windowFlags() | Qt.WindowStaysOnTopHint)
 
+        self.setWindowFlag(Qt.WindowStaysOnTopHint, True)
+
+        # ---------- ДОБАВЛЯЕМ СИСТЕМНЫЙ ТРЕЙ ----------
+        self.tray_icon = None
+        self.setup_tray()
+
+    def setup_tray(self):
+        """Создаёт иконку в трее с контекстным меню."""
+        icon_path = os.path.join(os.path.dirname(__file__), '..', 'icon.ico')
+        if not os.path.exists(icon_path):
+            # Если иконки нет – создаём пустую (но лучше добавить)
+            icon = QIcon()
+        else:
+            icon = QIcon(icon_path)
+
+        self.tray_icon = QSystemTrayIcon(self)
+        self.tray_icon.setIcon(icon)
+        self.tray_icon.setToolTip("SirisUnlocker")
+
+        # Меню трея
+        tray_menu = QMenu()
+
+        show_action = QAction("Показать окно", self)
+        show_action.triggered.connect(self.show_window_from_tray)
+
+        exit_action = QAction("Выход", self)
+        exit_action.triggered.connect(self.exit_application)
+
+        tray_menu.addAction(show_action)
+        tray_menu.addSeparator()
+        tray_menu.addAction(exit_action)
+
+        self.tray_icon.setContextMenu(tray_menu)
+        self.tray_icon.show()
+
+        # По двойному клику по иконке показываем окно
+        self.tray_icon.activated.connect(self.on_tray_activated)
+
+    def on_tray_activated(self, reason):
+        if reason == QSystemTrayIcon.DoubleClick:
+            self.show_window_from_tray()
+
+    def show_window_from_tray(self):
+        """Показывает и активирует главное окно."""
+        self.showNormal()
+        self.raise_()
+        self.activateWindow()
+
+    def exit_application(self):
+        """Полное завершение приложения."""
+        self.tray_icon.hide()
+        QApplication.quit()
+
+    def closeEvent(self, event):
+        """При нажатии на крестик – скрываем окно в трей, а не закрываем."""
+        event.ignore()
+        self.hide()
+        self.tray_icon.showMessage(
+            "SirisUnlocker",
+            "Приложение свернуто в трей. Нажмите Alt+` для быстрого показа.",
+            QSystemTrayIcon.Information,
+            2000
+        )
+
+    # ---------- Остальные методы (go_to_menu, open_xxx) без изменений ----------
     def go_to_menu(self):
         self.stacked_widget.setCurrentIndex(0)
         self.back_button.setVisible(False)

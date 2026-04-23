@@ -2,7 +2,7 @@ import winreg
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QTableWidget,
     QTableWidgetItem, QHeaderView, QCheckBox, QLabel, QTabWidget,
-    QAbstractItemView, QMessageBox
+    QAbstractItemView, QMessageBox, QProgressBar
 )
 from PySide6.QtCore import Qt, QThread, Signal
 
@@ -122,7 +122,6 @@ class UnlockThread(QThread):
     def run(self):
         success_count = 0
         for idx, res in enumerate(self.restrictions_to_unlock):
-            # найти соответствующий элемент в RESTRICTIONS по имени
             for key, desc, hive, path, value in RESTRICTIONS:
                 if key == res['name']:
                     if remove_registry_value(hive, path, value):
@@ -154,7 +153,8 @@ class ScanTab(QWidget):
         layout.addWidget(self.table)
 
         bottom_layout = QHBoxLayout()
-        self.auto_check = QCheckBox("Автоматическая разблокировка ограничений")
+        self.auto_check = QCheckBox("Автоматическая разблокировка")
+        self.auto_check.setObjectName("autoUnlockCheck")
         bottom_layout.addWidget(self.auto_check)
         bottom_layout.addStretch()
         self.scan_button = QPushButton("Начать сканирование")
@@ -209,7 +209,6 @@ class ScanTab(QWidget):
         self.unlock_thread.start()
 
     def on_step_unlocked(self, idx, res):
-        # удалить строку из таблицы по индексу в текущем self.found_restrictions
         row_to_remove = None
         for row, r in enumerate(self.found_restrictions):
             if r['name'] == res['name']:

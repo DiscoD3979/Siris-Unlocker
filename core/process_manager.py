@@ -86,8 +86,9 @@ def _get_cached_signature_info(exe_path):
         if not data:
             return None
         status = data.get('Status', 'Unknown')
-        signer = data.get('SignerCertificate', {}).get('Subject', '')
-        issuer = data.get('SignerCertificate', {}).get('Issuer', '')
+        signer_cert = data.get('SignerCertificate')
+        signer = signer_cert.get('Subject', '') if signer_cert else ''
+        issuer = signer_cert.get('Issuer', '') if signer_cert else ''
         return {
             'status': status,
             'signer': signer,

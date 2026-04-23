@@ -405,11 +405,16 @@ def get_scheduled_tasks_full():
             else:
                 created = ""
 
+            # Преобразование пути (убираем %SystemRoot% и т.п.)
+            if executable:
+                executable = os.path.expandvars(executable)
+
             tasks.append({
                 'name': task_name,
                 'state': state,
                 'author': author,
-                'created': created
+                'created': created,
+                'command': executable  # добавляем команду для возможности открытия папки
             })
     except Exception:
         pass

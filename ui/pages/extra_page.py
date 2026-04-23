@@ -1,3 +1,4 @@
+# ---------- Импорты (оставляем как есть) ----------
 import webbrowser
 import subprocess
 import winreg
@@ -12,7 +13,7 @@ import psutil
 import platform
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QGridLayout, QPushButton, QLabel, QMessageBox,
-    QFileDialog, QMenu, QApplication
+    QFileDialog, QMenu, QApplication, QToolTip
 )
 from PySide6.QtCore import Qt, QAbstractNativeEventFilter
 
@@ -22,30 +23,29 @@ from core.virustotal import check_file_virustotal
 # Константы для глобальной горячей клавиши
 # ------------------------------------------------------------
 MOD_ALT = 0x0001
-VK_T = 0x54
+VK_GRAVE = 0xC0          # клавиша ` (тильда)
 WM_HOTKEY = 0x0312
-HOTKEY_ID = 1
+HOTKEY_ID_LAUNCH = 2     # один ID на всё
 
 # ------------------------------------------------------------
-# Фильтр событий для горячей клавиши
+# Фильтр событий (оставляем тот же)
 # ------------------------------------------------------------
 class HotkeyFilter(QAbstractNativeEventFilter):
-    def __init__(self, parent_window):
+    def __init__(self, parent_window, extra_page):
         super().__init__()
         self.parent_window = parent_window
+        self.extra_page = extra_page
 
     def nativeEventFilter(self, eventType, message):
         if eventType == "windows_generic_MSG":
             msg = wintypes.MSG.from_address(int(message))
-            if msg.message == WM_HOTKEY and msg.wParam == HOTKEY_ID:
-                self.parent_window.showNormal()
-                self.parent_window.raise_()
-                self.parent_window.activateWindow()
+            if msg.message == WM_HOTKEY and msg.wParam == HOTKEY_ID_LAUNCH:
+                self.extra_page.activate_or_launch()
                 return True, 0
         return False, 0
 
 # ------------------------------------------------------------
-# Страница ExtraPage
+# Страница ExtraPage (только нужные изменения)
 # ------------------------------------------------------------
 class ExtraPage(QWidget):
     def __init__(self):
@@ -59,82 +59,142 @@ class ExtraPage(QWidget):
         main_layout.setSpacing(5)
 
         grid = QGridLayout()
-        grid.setHorizontalSpacing(5)
-        grid.setVerticalSpacing(5)
+        grid.setHorizontalSpacing(8)
+        grid.setVerticalSpacing(8)
         grid.setContentsMargins(0, 0, 0, 0)
+        grid.setColumnStretch(0, 1)
+        grid.setColumnStretch(1, 1)
+
+        button_min_width = 200
+        button_min_height = 38
 
         row = 0
         # Ряд 1
-        self.btn_drweb = self._create_button("CureIt", self.open_drweb)
-        self.btn_uac = self._create_button("UAC 3", self.enable_uac_level3)
-        self.btn_hosts = self._create_button("Восст. Hosts", self.restore_hosts)
+        self.btn_drweb = self._create_button("DoctorWeb", self.open_drweb,
+                                             "Открыть официальный сайт Dr.Web CureIt для загрузки лечащей утилиты",
+                                             min_width=button_min_width, min_height=button_min_height)
+        self.btn_uac = self._create_button("UAC", self.enable_uac_level3,
+                                           "Включить контроль учётных записей (UAC) на максимальный уровень",
+                                           min_width=button_min_width, min_height=button_min_height)
         grid.addWidget(self.btn_drweb, row, 0)
         grid.addWidget(self.btn_uac, row, 1)
-        grid.addWidget(self.btn_hosts, row, 2)
 
         row += 1
-        # Ряд 2
-        self.btn_clean = self._create_button("Очистка Temp", self.clean_temp)
-        self.btn_defender = self._create_button("Защитник", self.toggle_defender)
-        self.btn_assoc = self._create_button("Сброс .exe", self.reset_exe_assoc)
-        grid.addWidget(self.btn_clean, row, 0)
-        grid.addWidget(self.btn_defender, row, 1)
-        grid.addWidget(self.btn_assoc, row, 2)
+        self.btn_hosts = self._create_button("Восст. Hosts", self.restore_hosts,
+                                             "Восстановить файл hosts до стандартного состояния Windows",
+                                             min_width=button_min_width, min_height=button_min_height)
+        self.btn_clean = self._create_button("Очистка Temp", self.clean_temp,
+                                             "Удалить временные файлы из папок Temp, Windows\\Temp и Prefetch",
+                                             min_width=button_min_width, min_height=button_min_height)
+        grid.addWidget(self.btn_hosts, row, 0)
+        grid.addWidget(self.btn_clean, row, 1)
 
         row += 1
-        # Ряд 3
-        self.btn_vt = self._create_button("VirusTotal", self.check_file_vt)
-        self.btn_restart_explorer = self._create_button("Перезап. Explorer", self.restart_explorer)
-        self.btn_sysinfo = self._create_button("Инфо системы", self.show_system_info)
+        self.btn_defender = self._create_button("Защит. Windows", self.toggle_defender,
+                                                "Включить или отключить антивирусную программу 'Защитник Windows'",
+                                                min_width=button_min_width, min_height=button_min_height)
+        self.btn_assoc = self._create_button("Сброс ассоциаций .exe", self.reset_exe_assoc,
+                                             "Восстановить стандартную ассоциацию для исполняемых .exe файлов",
+                                             min_width=button_min_width, min_height=button_min_height)
+        grid.addWidget(self.btn_defender, row, 0)
+        grid.addWidget(self.btn_assoc, row, 1)
+
+        row += 1
+        self.btn_vt = self._create_button("VirusTotal", self.check_file_vt,
+                                          "Проверить выбранный файл на наличие угроз через сервис VirusTotal",
+                                          min_width=button_min_width, min_height=button_min_height)
+        self.btn_restart_explorer = self._create_button("↻ Explorer", self.restart_explorer,
+                                                        "Перезапустить процесс проводника Windows (explorer.exe)",
+                                                        min_width=button_min_width, min_height=button_min_height)
         grid.addWidget(self.btn_vt, row, 0)
         grid.addWidget(self.btn_restart_explorer, row, 1)
-        grid.addWidget(self.btn_sysinfo, row, 2)
 
         row += 1
-        # Ряд 4: Автозагрузка (меню) и удаление
-        self.btn_startup_menu = self._create_button("Автозагрузка...", self.show_startup_menu)
-        self.btn_remove_startup = self._create_button("Убрать из авто", self.remove_self_from_startup)
-        self.always_on_top_btn = self._create_button("Поверх окон", self.toggle_always_on_top)
-        self.always_on_top_btn.setCheckable(True)
-        self.always_on_top_btn.setChecked(True)
+        self.btn_sysinfo = self._create_button("Инфо системы", self.show_system_info,
+                                               "Показать подробную информацию о системе (ЦП, ОЗУ, GPU, ОС)",
+                                               min_width=button_min_width, min_height=button_min_height)
+        self.btn_sfc = self._create_button("SFC /Scannow", self.run_sfc,
+                                           "Запустить проверку и восстановление целостности системных файлов Windows",
+                                           min_width=button_min_width, min_height=button_min_height)
+        grid.addWidget(self.btn_sysinfo, row, 0)
+        grid.addWidget(self.btn_sfc, row, 1)
+
+        row += 1
+        self.btn_startup_menu = self._create_button("+ Автозагрузка", self.show_startup_menu,
+                                                    "Добавить SirisUnlocker в автозапуск (реестр, планировщик, папка или оболочка)",
+                                                    min_width=button_min_width, min_height=button_min_height)
+        self.btn_remove_startup = self._create_button("- Автозагрузка", self.remove_self_from_startup,
+                                                      "Удалить SirisUnlocker из всех мест автозагрузки",
+                                                      min_width=button_min_width, min_height=button_min_height)
         grid.addWidget(self.btn_startup_menu, row, 0)
         grid.addWidget(self.btn_remove_startup, row, 1)
-        grid.addWidget(self.always_on_top_btn, row, 2)
 
         row += 1
-        # Ряд 5: Безопасный режим и Shell
-        self.btn_safe = self._create_button("Safe (cmd)", self.boot_safe_mode)
-        self.btn_normal = self._create_button("Normal", self.boot_normal_mode)
-        self.btn_reset_shell = self._create_button("Сброс Shell", self.reset_shell)
-        grid.addWidget(self.btn_safe, row, 0)
-        grid.addWidget(self.btn_normal, row, 1)
-        grid.addWidget(self.btn_reset_shell, row, 2)
+        self.always_on_top_btn = self._create_button("Поверх окон", self.toggle_always_on_top,
+                                                     "Переключить режим отображения окна поверх всех остальных окон",
+                                                     min_width=button_min_width, min_height=button_min_height)
+        self.always_on_top_btn.setCheckable(True)
+        self.always_on_top_btn.setChecked(True)
+        self.btn_safe = self._create_button("Safe режим (cmd)", self.boot_safe_mode,
+                                            "Перезагрузить компьютер в безопасном режиме с поддержкой командной строки",
+                                            min_width=button_min_width, min_height=button_min_height)
+        grid.addWidget(self.always_on_top_btn, row, 0)
+        grid.addWidget(self.btn_safe, row, 1)
 
         row += 1
-        # Ряд 6: Подмена залипания и Utilman
-        self.btn_sticky_replace = self._create_button("Подм. залип.", self.replace_sticky_keys)
-        self.btn_sticky_restore = self._create_button("Восст. залип.", self.restore_sticky_keys)
-        self.btn_utilman_replace = self._create_button("Подм. спец.", self.replace_utilman)
+        self.btn_normal = self._create_button("Обычный режим", self.boot_normal_mode,
+                                              "Отключить безопасный режим и перезагрузить компьютер в обычном режиме",
+                                              min_width=button_min_width, min_height=button_min_height)
+        self.btn_reset_shell = self._create_button("Сброс Shell", self.reset_shell,
+                                                   "Восстановить стандартную оболочку Windows (explorer.exe) и параметр Userinit",
+                                                   min_width=button_min_width, min_height=button_min_height)
+        grid.addWidget(self.btn_normal, row, 0)
+        grid.addWidget(self.btn_reset_shell, row, 1)
+
+        row += 1
+        self.btn_sticky_replace = self._create_button("Подм. залип.", self.replace_sticky_keys,
+                                                      "Заменить sethc.exe (залипание клавиш) на SirisUnlocker (требуется перезагрузка)",
+                                                      min_width=button_min_width, min_height=button_min_height)
+        self.btn_sticky_restore = self._create_button("Восст. залип.", self.restore_sticky_keys,
+                                                      "Восстановить оригинальный файл sethc.exe из резервной копии",
+                                                      min_width=button_min_width, min_height=button_min_height)
         grid.addWidget(self.btn_sticky_replace, row, 0)
         grid.addWidget(self.btn_sticky_restore, row, 1)
-        grid.addWidget(self.btn_utilman_replace, row, 2)
 
         row += 1
-        # Ряд 7: Восстановление Utilman и горячая клавиша
-        self.btn_utilman_restore = self._create_button("Восст. спец.", self.restore_utilman)
-        self.btn_hotkey = self._create_button("Alt+t (глоб.)", self.toggle_hotkey)
+        self.btn_utilman_replace = self._create_button("Подм. спец.", self.replace_utilman,
+                                                       "Заменить Utilman.exe (специальные возможности) на SirisUnlocker (требуется перезагрузка)",
+                                                       min_width=button_min_width, min_height=button_min_height)
+        self.btn_utilman_restore = self._create_button("Восст. спец.", self.restore_utilman,
+                                                       "Восстановить оригинальный Utilman.exe из резервной копии",
+                                                       min_width=button_min_width, min_height=button_min_height)
+        grid.addWidget(self.btn_utilman_replace, row, 0)
+        grid.addWidget(self.btn_utilman_restore, row, 1)
+
+        # ---- ЕДИНСТВЕННАЯ КНОПКА ДЛЯ ГОРЯЧЕЙ КЛАВИШИ ----
+        row += 1
+        self.btn_hotkey = self._create_button("Alt+` (показать/запуск)", self.toggle_hotkey,
+                                              "Глобальная клавиша: показать окно, если оно есть, иначе запустить программу",
+                                              min_width=button_min_width, min_height=button_min_height)
         self.btn_hotkey.setCheckable(True)
-        grid.addWidget(self.btn_utilman_restore, row, 0)
-        grid.addWidget(self.btn_hotkey, row, 1)
+        # По умолчанию можно включить (true), но тогда надо регистрировать хоткей сразу после showEvent
+        # Оставим false – пользователь включит сам кнопкой
+        self.btn_hotkey.setChecked(False)
+        grid.addWidget(self.btn_hotkey, row, 0, 1, 2)   # растягиваем на две колонки
+
+        # Растягиваем все строки
+        for r in range(row + 1):
+            grid.setRowStretch(r, 1)
 
         main_layout.addLayout(grid)
         main_layout.addStretch(1)
         self.setLayout(main_layout)
 
-    def _create_button(self, text, slot):
+    def _create_button(self, text, slot, tooltip, min_width=140, min_height=36):
         btn = QPushButton(text)
-        btn.setMinimumWidth(120)
-        btn.setMinimumHeight(30)
+        btn.setMinimumWidth(min_width)
+        btn.setMinimumHeight(min_height)
+        btn.setToolTip(tooltip)
         btn.clicked.connect(slot)
         return btn
 
@@ -146,6 +206,71 @@ class ExtraPage(QWidget):
             return ctypes.windll.shell32.IsUserAnAdmin()
         except:
             return False
+
+    # ------------------------------------------------------
+    #  Горячая клавиша (объединённая логика)
+    # ------------------------------------------------------
+    def toggle_hotkey(self):
+        if not self.parent_window:
+            self.btn_hotkey.setChecked(False)
+            return
+        if self.btn_hotkey.isChecked():
+            success = self.register_hotkey(HOTKEY_ID_LAUNCH, VK_GRAVE)
+            if success:
+                self.hotkey_registered = True
+                QMessageBox.information(self, "Успех", "Горячая клавиша Alt+` зарегистрирована.")
+            else:
+                self.btn_hotkey.setChecked(False)
+                QMessageBox.critical(self, "Ошибка", "Не удалось зарегистрировать Alt+`. Возможно, клавиша уже занята.")
+        else:
+            self.unregister_hotkey(HOTKEY_ID_LAUNCH)
+            self.hotkey_registered = False
+            QMessageBox.information(self, "Успех", "Горячая клавиша Alt+` отключена.")
+
+    def register_hotkey(self, hotkey_id, vk_code):
+        if not self.parent_window:
+            return False
+        try:
+            hwnd = int(self.parent_window.winId())
+            result = ctypes.windll.user32.RegisterHotKey(hwnd, hotkey_id, MOD_ALT, vk_code)
+            if result:
+                if self.hotkey_filter is None:
+                    self.hotkey_filter = HotkeyFilter(self.parent_window, self)
+                    QApplication.instance().installNativeEventFilter(self.hotkey_filter)
+                return True
+            return False
+        except Exception as e:
+            print(f"RegisterHotKey failed: {e}")
+            return False
+
+    def unregister_hotkey(self, hotkey_id):
+        if not self.parent_window:
+            return
+        try:
+            hwnd = int(self.parent_window.winId())
+            ctypes.windll.user32.UnregisterHotKey(hwnd, hotkey_id)
+        except Exception as e:
+            print(f"UnregisterHotKey failed: {e}")
+
+    def activate_or_launch(self):
+        """
+        Вызывается по Alt+`:
+        - Если главное окно существует (даже скрыто в трее) → показать и активировать.
+        - Если окна нет (приложение закрыто) → запустить новый процесс.
+        """
+        if self.parent_window is not None:
+            # Окно существует (скорее всего скрыто). Показываем и активируем.
+            self.parent_window.showNormal()
+            self.parent_window.raise_()
+            self.parent_window.activateWindow()
+        else:
+            # Приложение полностью выгружено – запускаем новый экземпляр
+            exe_path = self._get_self_exe()
+            if exe_path:
+                try:
+                    subprocess.Popen([exe_path])
+                except Exception as e:
+                    QMessageBox.critical(self, "Ошибка", f"Не удалось запустить SirisUnlocker: {e}")
 
     # ---------- Стандартные методы ----------
     def open_drweb(self):
@@ -279,6 +404,22 @@ class ExtraPage(QWidget):
         self.parent_window.raise_()
 
     # ---------- Новые методы ----------
+    def run_sfc(self):
+        if not self._check_admin():
+            QMessageBox.critical(self, "Ошибка", "Необходимы права администратора.")
+            return
+        reply = QMessageBox.question(self, "Подтверждение",
+                                     "Запустить проверку и восстановление системных файлов (sfc /scannow)?\n"
+                                     "Процесс может занять длительное время.",
+                                     QMessageBox.Yes | QMessageBox.No)
+        if reply != QMessageBox.Yes:
+            return
+        try:
+            subprocess.Popen('sfc /scannow', shell=True)
+            QMessageBox.information(self, "Запущено", "Сканирование системных файлов запущено в отдельном окне.")
+        except Exception as e:
+            QMessageBox.critical(self, "Ошибка", f"Не удалось запустить sfc: {e}")
+
     def toggle_defender(self):
         if not self._check_admin():
             QMessageBox.critical(self, "Ошибка", "Необходимы права администратора.")
@@ -311,8 +452,8 @@ class ExtraPage(QWidget):
         menu = QMenu(self)
         menu.addAction("Реестр (HKCU\\Run)", self.add_self_to_startup_registry)
         menu.addAction("Планировщик задач", self.add_self_to_startup_task)
-        menu.addAction("Папка Startup (CMD)", self.add_self_to_startup_cmd)
-        menu.addAction("Вместе с Explorer (Shell)", self.set_shell_with_app)
+        menu.addAction("Вместе с Explorer", self.add_self_with_explorer)
+        menu.addAction("CMDLINE (быстрый)", self.add_self_to_startup_cmdline)
         menu.exec(self.btn_startup_menu.mapToGlobal(self.btn_startup_menu.rect().bottomLeft()))
 
     def _get_self_exe(self):
@@ -343,38 +484,55 @@ class ExtraPage(QWidget):
             return
         task_name = "SirisUnlocker_Startup"
         try:
-            subprocess.Popen(
+            result = subprocess.run(
                 f'schtasks /create /tn "{task_name}" /tr "{exe}" /sc onlogon /f',
-                shell=True,
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL
+                shell=True, capture_output=True, text=True
             )
-            QMessageBox.information(self, "Успех", "Задача в планировщике создана.")
+            if result.returncode == 0:
+                QMessageBox.information(self, "Успех", "Задача в планировщике создана.")
+            else:
+                QMessageBox.critical(self, "Ошибка", f"Не удалось создать задачу:\n{result.stderr}")
         except Exception as e:
             QMessageBox.critical(self, "Ошибка", f"Не удалось создать задачу: {e}")
 
-    def add_self_to_startup_cmd(self):
+    def add_self_with_explorer(self):
+        """Запуск SirisUnlocker вместе с Explorer (без замены оболочки)."""
         exe = self._get_self_exe()
         if not exe:
             return
-        startup_folder = os.path.expandvars(r"%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup")
-        shortcut_path = os.path.join(startup_folder, "SirisUnlocker.lnk")
         try:
+            # Создаём ярлык в папке автозагрузки
+            startup_folder = os.path.expandvars(r"%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup")
+            shortcut_path = os.path.join(startup_folder, "SirisUnlocker.lnk")
             ps_cmd = f'$WshShell = New-Object -ComObject WScript.Shell; $Shortcut = $WshShell.CreateShortcut("{shortcut_path}"); $Shortcut.TargetPath = "{exe}"; $Shortcut.Save()'
-            subprocess.Popen(
-                ["powershell", "-Command", ps_cmd],
-                shell=True,
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL
-            )
-            QMessageBox.information(self, "Успех", f"Ярлык создан в {startup_folder}")
+            result = subprocess.run(["powershell", "-Command", ps_cmd], shell=True, capture_output=True, text=True)
+            if result.returncode == 0:
+                QMessageBox.information(self, "Успех", f"Ярлык создан в {startup_folder}")
+            else:
+                QMessageBox.critical(self, "Ошибка", f"Не удалось создать ярлык:\n{result.stderr}")
         except Exception as e:
             QMessageBox.critical(self, "Ошибка", f"Не удалось создать ярлык: {e}")
+
+    def add_self_to_startup_cmdline(self):
+        """Самый быстрый запуск через CMDLINE в реестре (требует прав администратора)."""
+        if not self._check_admin():
+            QMessageBox.critical(self, "Ошибка", "Необходимы права администратора.")
+            return
+        exe = self._get_self_exe()
+        if not exe:
+            return
+        try:
+            key_path = r"SOFTWARE\Microsoft\Windows\CurrentVersion\Run"
+            with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, key_path, 0, winreg.KEY_SET_VALUE) as key:
+                winreg.SetValueEx(key, "SirisUnlocker", 0, winreg.REG_SZ, f'"{exe}"')
+            QMessageBox.information(self, "Успех", "Добавлено в автозагрузку через HKLM\\Run.")
+        except Exception as e:
+            QMessageBox.critical(self, "Ошибка", f"Не удалось добавить: {e}")
 
     def remove_self_from_startup(self):
         name = "SirisUnlocker"
         removed = 0
-        # Реестр
+        # Реестр HKCU
         try:
             key = winreg.OpenKey(winreg.HKEY_CURRENT_USER,
                                  r"Software\Microsoft\Windows\CurrentVersion\Run",
@@ -384,14 +542,19 @@ class ExtraPage(QWidget):
             removed += 1
         except:
             pass
+        # Реестр HKLM
+        try:
+            key = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE,
+                                 r"SOFTWARE\Microsoft\Windows\CurrentVersion\Run",
+                                 0, winreg.KEY_SET_VALUE)
+            winreg.DeleteValue(key, name)
+            winreg.CloseKey(key)
+            removed += 1
+        except:
+            pass
         # Планировщик
         try:
-            subprocess.Popen(
-                f'schtasks /delete /tn "SirisUnlocker_Startup" /f',
-                shell=True,
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL
-            )
+            subprocess.run('schtasks /delete /tn "SirisUnlocker_Startup" /f', shell=True, capture_output=True)
             removed += 1
         except:
             pass
@@ -470,13 +633,14 @@ class ExtraPage(QWidget):
         except Exception as e:
             QMessageBox.critical(self, "Ошибка", f"Не удалось получить информацию: {e}")
 
-    # --- Сброс оболочки ---
+    # --- Сброс оболочки (полный сброс Winlogon) ---
     def reset_shell(self):
         if not self._check_admin():
             QMessageBox.critical(self, "Ошибка", "Необходимы права администратора.")
             return
         reply = QMessageBox.question(self, "Подтверждение",
-                                     "Сбросить оболочку Windows на explorer.exe? Потребуется перезагрузка.",
+                                     "Сбросить оболочку Windows (Shell и Userinit) к стандартным значениям?\n"
+                                     "Потребуется перезагрузка.",
                                      QMessageBox.Yes | QMessageBox.No)
         if reply != QMessageBox.Yes:
             return
@@ -485,38 +649,11 @@ class ExtraPage(QWidget):
                                  r"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon",
                                  0, winreg.KEY_SET_VALUE)
             winreg.SetValueEx(key, "Shell", 0, winreg.REG_SZ, "explorer.exe")
+            winreg.SetValueEx(key, "Userinit", 0, winreg.REG_SZ, r"C:\Windows\system32\userinit.exe,")
             winreg.CloseKey(key)
             QMessageBox.information(self, "Успех", "Оболочка сброшена. Перезагрузитесь.")
         except Exception as e:
             QMessageBox.critical(self, "Ошибка", f"Не удалось сбросить Shell: {e}")
-
-    def set_shell_with_app(self):
-        if not self._check_admin():
-            QMessageBox.critical(self, "Ошибка", "Требуются права администратора.")
-            return
-        exe = self._get_self_exe()
-        if not exe:
-            return
-        reply = QMessageBox.question(self, "Подтверждение",
-                                     "Заменить оболочку на bat-файл, запускающий explorer и приложение?\n"
-                                     "Для отмены используйте 'Сброс Shell'.",
-                                     QMessageBox.Yes | QMessageBox.No)
-        if reply != QMessageBox.Yes:
-            return
-        bat_path = os.path.join(os.environ['TEMP'], 'start_explorer_and_app.bat')
-        bat_content = f'@echo off\nstart "" explorer.exe\nstart "" "{exe}"\nexit\n'
-        try:
-            with open(bat_path, 'w') as f:
-                f.write(bat_content)
-            subprocess.run(f'attrib +h "{bat_path}"', shell=True, check=False)
-            key = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE,
-                                 r"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon",
-                                 0, winreg.KEY_SET_VALUE)
-            winreg.SetValueEx(key, "Shell", 0, winreg.REG_SZ, bat_path)
-            winreg.CloseKey(key)
-            QMessageBox.information(self, "Успех", f"Оболочка заменена. Перезагрузитесь.")
-        except Exception as e:
-            QMessageBox.critical(self, "Ошибка", f"Не удалось настроить Shell: {e}")
 
     # ---------- Подмена системных файлов через MoveFileEx ----------
     MOVEFILE_DELAY_UNTIL_REBOOT = 0x4
@@ -595,40 +732,69 @@ class ExtraPage(QWidget):
         else:
             QMessageBox.critical(self, "Ошибка", "Не удалось запланировать восстановление.")
 
-    # ---------- Глобальная горячая клавиша Alt+t ----------
-    def toggle_hotkey(self):
+    # ---------- Глобальные горячие клавиши ----------
+    def toggle_hotkey_show(self):
         if not self.parent_window:
-            self.btn_hotkey.setChecked(False)
+            self.btn_hotkey_show.setChecked(False)
             return
-        if self.btn_hotkey.isChecked():
-            success = self.register_hotkey()
-            if not success:
-                self.btn_hotkey.setChecked(False)
-                QMessageBox.critical(self, "Ошибка", "Не удалось зарегистрировать горячую клавишу Alt+t. Возможно, она уже занята.")
+        if self.btn_hotkey_show.isChecked():
+            success = self.register_hotkey(HOTKEY_ID_SHOW, VK_T)
+            if success:
+                self.hotkey_show_registered = True
+                QMessageBox.information(self, "Успех", "Горячая клавиша Alt+T зарегистрирована.")
+            else:
+                self.btn_hotkey_show.setChecked(False)
+                QMessageBox.critical(self, "Ошибка", "Не удалось зарегистрировать Alt+T. Возможно, она уже занята.")
         else:
-            self.unregister_hotkey()
+            self.unregister_hotkey(HOTKEY_ID_SHOW)
+            self.hotkey_show_registered = False
+            QMessageBox.information(self, "Успех", "Горячая клавиша Alt+T отключена.")
 
-    def register_hotkey(self):
+    def toggle_hotkey_launch(self):
+        if self.btn_hotkey_launch.isChecked():
+            success = self.register_hotkey(HOTKEY_ID_LAUNCH, VK_GRAVE)
+            if success:
+                self.hotkey_launch_registered = True
+                QMessageBox.information(self, "Успех", "Горячая клавиша Alt+` зарегистрирована.")
+            else:
+                self.btn_hotkey_launch.setChecked(False)
+                QMessageBox.critical(self, "Ошибка", "Не удалось зарегистрировать Alt+`. Возможно, она уже занята.")
+        else:
+            self.unregister_hotkey(HOTKEY_ID_LAUNCH)
+            self.hotkey_launch_registered = False
+            QMessageBox.information(self, "Успех", "Горячая клавиша Alt+` отключена.")
+
+    def register_hotkey(self, hotkey_id, vk_code):
+        if not self.parent_window:
+            return False
         try:
             hwnd = int(self.parent_window.winId())
-            result = ctypes.windll.user32.RegisterHotKey(hwnd, HOTKEY_ID, MOD_ALT, VK_T)
+            result = ctypes.windll.user32.RegisterHotKey(hwnd, hotkey_id, MOD_ALT, vk_code)
             if result:
                 if self.hotkey_filter is None:
-                    self.hotkey_filter = HotkeyFilter(self.parent_window)
+                    self.hotkey_filter = HotkeyFilter(self.parent_window, self)
                     QApplication.instance().installNativeEventFilter(self.hotkey_filter)
-                self.hotkey_registered = True
-                QMessageBox.information(self, "Успех", "Горячая клавиша Alt+t зарегистрирована.")
                 return True
             return False
         except Exception as e:
             print(f"RegisterHotKey failed: {e}")
             return False
 
-    def unregister_hotkey(self):
+    def unregister_hotkey(self, hotkey_id):
+        if not self.parent_window:
+            return
         try:
             hwnd = int(self.parent_window.winId())
-            ctypes.windll.user32.UnregisterHotKey(hwnd, HOTKEY_ID)
-            self.hotkey_registered = False
-            QMessageBox.information(self, "Успех", "Горячая клавиша Alt+t отключена.")
+            ctypes.windll.user32.UnregisterHotKey(hwnd, hotkey_id)
         except Exception as e:
             print(f"UnregisterHotKey failed: {e}")
+
+    def launch_or_activate(self):
+        """Запускает новый экземпляр SirisUnlocker или активирует существующий."""
+        exe_path = self._get_self_exe()
+        if not exe_path:
+            return
+        try:
+            subprocess.Popen([exe_path])
+        except Exception as e:
+            QMessageBox.critical(self, "Ошибка", f"Не удалось запустить SirisUnlocker: {e}")
