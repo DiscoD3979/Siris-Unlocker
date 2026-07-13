@@ -1,6 +1,6 @@
 <div align="center">
 
-[![Typing SVG](https://readme-typing-svg.demolab.com?font=Fira+Code&weight=700&size=32&duration=3000&pause=1200&color=9B30FF&center=true&vCenter=true&width=700&lines=SirisUnlocker;%D0%9C%D0%BE%D1%89%D0%BD%D0%B0%D1%8F+%D1%83%D1%82%D0%B8%D0%BB%D0%B8%D1%82%D0%B0+%D0%B4%D0%BB%D1%8F+Windows;%D0%A1%D0%BD%D1%8F%D1%82%D0%B8%D0%B5+%D1%81%D0%B8%D1%81%D1%82%D0%B5%D0%BC%D0%BD%D1%8B%D1%85+%D0%BE%D0%B3%D1%80%D0%B0%D0%BD%D0%B8%D1%87%D0%B5%D0%BD%D0%B8%D0%B9;%D0%9A%D0%BE%D0%BD%D1%82%D1%80%D0%BE%D0%BB%D1%8C+%D0%B0%D0%B2%D1%82%D0%BE%D0%B7%D0%B0%D0%B3%D1%80%D1%83%D0%B7%D0%BA%D0%B8;%D0%A0%D0%B0%D1%81%D1%88%D0%B8%D1%80%D0%B5%D0%BD%D0%BD%D1%8B%D0%B9+%D0%B4%D0%B8%D1%81%D0%BF%D0%B5%D1%82%D1%87%D0%B5%D1%80+%D0%B7%D0%B0%D0%B4%D0%B0%D1%87;%D0%94%D0%BB%D1%8F+Windows+10%2F11)](https://git.io/typing-svg)
+[![Typing SVG](https://readme-typing-svg.demolab.com?font=Fira+Code&weight=700&size=32&duration=3000&pause=1200&color=9B30FF&center=true&vCenter=true&width=700&lines=SirisUnlocker;%D0%9C%D0%BE%D1%89%D0%BD%D0%B0%D1%8F+%D1%83%D1%82%D0%B8%D0%BB%D0%B8%D1%82%D0%B0+%D0%B4%D0%BB%D1%8F+Windows;%D0%9F%D0%BE%D0%BB%D0%BD%D1%8B%D0%B9+%D1%80%D0%B5%D0%BA%D0%BE%D0%B4%D0%B8%D0%BD%D0%B3+%D0%BD%D0%B0+C%2B%2B;%D0%A1%D0%BD%D1%8F%D1%82%D0%B8%D0%B5+%D1%81%D0%B8%D1%81%D1%82%D0%B5%D0%BC%D0%BD%D1%8B%D1%85+%D0%BE%D0%B3%D1%80%D0%B0%D0%BD%D0%B8%D1%87%D0%B5%D0%BD%D0%B8%D0%B9;%D0%9A%D0%BE%D0%BD%D1%82%D1%80%D0%BE%D0%BB%D1%8C+%D0%B0%D0%B2%D1%82%D0%BE%D0%B7%D0%B0%D0%B3%D1%80%D1%83%D0%B7%D0%BA%D0%B8;%D0%A0%D0%B0%D0%B1%D0%BE%D1%82%D0%B0+%D0%B2+%D1%81%D1%80%D0%B5%D0%B4%D0%B5+WinRE;%D0%94%D0%BB%D1%8F+Windows+10%2F11)](https://git.io/typing-svg)
 
 [![GitHub release (latest by date)](https://img.shields.io/github/v/release/DiscoD3979/Siris-Unlocker?label=%D0%A0%D0%B5%D0%BB%D0%B8%D0%B7&style=for-the-badge&color=9B30FF)](https://github.com/DiscoD3979/Siris-Unlocker/releases/latest)
 [![GitHub all releases](https://img.shields.io/github/downloads/DiscoD3979/Siris-Unlocker/total?style=for-the-badge&label=%D0%A1%D0%BA%D0%B0%D1%87%D0%B8%D0%B2%D0%B0%D0%BD%D0%B8%D0%B9&color=9B30FF)](https://github.com/DiscoD3979/Siris-Unlocker/releases)
@@ -15,9 +15,9 @@
 
 <div align="center">
   
-### 🔥 SirisUnlocker — твой личный мастер по наведению порядка в Windows
+### SirisUnlocker — твой личный мастер по наведению порядка в Windows
 
-🔧 Снимает ограничения · 🛡 Чистит автозагрузку · ⚡ Ускоряет систему
+Снимает ограничения · Чистит автозагрузку · Работает в WinRE
 
 </div>
 
@@ -25,17 +25,19 @@
 
 ---
 
-## 📖 О проекте
+## О проекте
 
 **SirisUnlocker** — портативный инструмент для управления системой, снятия ограничений и контроля автозагрузки в Windows 10/11. Работает как в обычной Windows, так и в среде восстановления (WinRE).
 
-[🎯 Скачать последнюю версию](https://github.com/DiscoD3979/Siris-Unlocker/releases/latest)
+**Полностью переписан на C++** — вместо медленного Python быстрый нативный код. Один standalone .exe без внешних DLL.
+
+[Скачать последнюю версию](https://github.com/DiscoD3979/Siris-Unlocker/releases/latest)
 
 ---
 
-## 🚀 Возможности
+## Возможности
 
-### 🖥 Диспетчер задач
+### Диспетчер задач
 `процессы · подписи · контроль`
 
 - Древовидное отображение процессов с цветовой подсветкой (красный – критичные)
@@ -45,7 +47,7 @@
 - Фильтр «Скрыть подписанные» — видны только неподписанные процессы
 - Автообновление с настраиваемым интервалом
 
-### ⚙️ Автозагрузка
+### Автозагрузка
 `реестр · планировщик · службы · WinRE`
 
 Полный контроль над всеми точками автозапуска Windows:
@@ -57,17 +59,17 @@
 - Добавление, изменение, удаление записей
 - Массовое удаление и перемещение в карантин
 - Откат действий (Undo)
-- 🏆 **Работает в среде восстановления WinRE**
+- **Работает в среде восстановления WinRE**
 
-### 🔓 Снятие ограничений
-`132 ограничения · авторежим · ручной режим`
+### Снятие ограничений
+`ограничения · авторежим · ручной режим`
 
 - Сканирование системы на наличие системных политик и ограничений
 - Автоматическая разблокировка найденных ограничений
 - Ручной режим с выбором отдельных ограничений
 - Снятие ограничений на: CMD, диспетчер задач, редактор реестра, панель управления, контекстные меню и многое другое
 
-### 🛡 Карантин
+### Карантин
 `безопасность · восстановление · автоочистка`
 
 - Безопасное хранение удалённых записей автозагрузки (реестр, файлы)
@@ -75,29 +77,29 @@
 - Автоматическая очистка старых записей (настраиваемый срок)
 - Сортировка по дате, типу, пути
 
-### 📝 Редактор реестра
+### Редактор реестра
 `навигация · редактирование · WinRE`
 
 - Встроенный аналог regedit с деревом ключей и таблицей значений
 - Навигация: назад, вперёд, вверх, ручной ввод пути
 - Создание, изменение, удаление параметров
 - Копирование пути, имени, данных
-- 🏆 **Загрузка кустов установленной Windows из WinRE**
+- **Загрузка кустов установленной Windows из WinRE**
 
-### 🗂 Проводник
+### Проводник
 `файлы · папки · навигация`
 
 - Встроенный файловый менеджер с навигацией по дискам и папкам
 - Быстрый доступ к системным папкам
 
-### 💿 Управление дисками
+### Управление дисками
 `разделы · форматирование · DiskPart`
 
 - Просмотр разделов и томов
 - Форматирование, назначение буквы диска
 - Работа через DiskPart
 
-### 👤 Управление пользователями
+### Управление пользователями
 `учётки · пароли · роли`
 
 - Создание и удаление учётных записей
@@ -105,35 +107,48 @@
 - Блокировка и разблокировка
 - Изменение роли (администратор / пользователь)
 
-### 🧰 Дополнительные инструменты
+### Своя консоль
+`CMD · выполнение команд · вывод`
+
+- Встроенная командная строка внутри программы
+- Выполнение любых команд Windows
+- Вывод результата прямо в окно
+
+### Дополнительные инструменты
 `диагностика · восстановление · очистка`
 
-- Загрузка **Dr.Web CureIt!**
 - Включение UAC (уровень 3)
 - Восстановление системного файла **hosts**
 - Очистка временных папок (Temp, Windows\Temp, Prefetch)
 - Сброс ассоциаций `.exe`
 - Управление Защитником Windows (вкл/откл)
 - Проверка системных файлов (SFC /Scannow)
-- Восстановление шрифтов и раскладок клавиатуры
+- Восстановление шрифтов
 - Восстановление языковых пакетов (ru-RU, en-US) через DISM
 - Сброс оболочки Windows (Shell и Userinit)
 - Добавление в автозагрузку (реестр, планировщик, CmdLine, вместе с Explorer)
+- 7 способов копирования в System32 — замена sethc и Utilman
 - Разблокировка дисков
 - Загрузка в WinRE, безопасный режим и обратно
-- Глобальные горячие клавиши: **Alt+T**, **Alt+Ё**
+- Глобальная горячая клавиша: **Alt+Ё**
 - Режим «Поверх всех окон»
-- Случайное имя окна (обфускация)
+- Frameless окно с кастомным тёмным заголовком
+- Случайное название окна при каждом запуске
+- Крестики-нолики (игровой режим)
 
 ---
 
-## 🛠 Технологический стек
+## Технологический стек
 
-![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)
-![PySide6](https://img.shields.io/badge/PySide6_(Qt6)-41CD52?style=for-the-badge&logo=qt&logoColor=white)
-![WinAPI](https://img.shields.io/badge/WinAPI_(ctypes)-0078D6?style=for-the-badge&logo=windows&logoColor=white)
-![PyInstaller](https://img.shields.io/badge/PyInstaller-FFCC00?style=for-the-badge&logo=python&logoColor=black)
-![requests](https://img.shields.io/badge/requests-0078D4?style=for-the-badge)
-![psutil](https://img.shields.io/badge/psutil-00AA00?style=for-the-badge)
+![C++20](https://img.shields.io/badge/C++20-00599C?style=for-the-badge&logo=cplusplus&logoColor=white)
+![Qt 6](https://img.shields.io/badge/Qt_6-41CD52?style=for-the-badge&logo=qt&logoColor=white)
+![WinAPI](https://img.shields.io/badge/WinAPI-0078D6?style=for-the-badge&logo=windows&logoColor=white)
+![CMake](https://img.shields.io/badge/CMake-064F8C?style=for-the-badge&logo=cmake&logoColor=white)
+![Ninja](https://img.shields.io/badge/Ninja-8B0000?style=for-the-badge)
+![vcpkg](https://img.shields.io/badge/vcpkg-00599C?style=for-the-badge)
 ![Git](https://img.shields.io/badge/Git-F05032?style=for-the-badge&logo=git&logoColor=white)
 ![GitHub](https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white)
+
+---
+
+**By DiscoD3979**
