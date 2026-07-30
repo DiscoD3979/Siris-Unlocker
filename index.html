@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="yandex-verification" content="4ddeab9f48348667" />
+    <meta name="google-site-verification" content="I0epH3WmaE-cFRFVuA8dYHIw45d0vCa6yqPWpwOnIiA" />
+    <title>SirisUnlocker — инструмент для управления Windows</title>
+    <meta name="description" content="SirisUnlocker — портативный инструмент для снятия ограничений, управления автозагрузкой и процессами в Windows 10/11.">
+    <link rel="icon" href="/favicon.ico" type="image/x-icon">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <canvas id="bg-canvas"></canvas>
+
+    <header class="header">
+        <div class="container header__inner">
+            <a href="#" class="logo" data-page="home">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M12 2L3 7v5c0 5.25 3.83 10.15 9 12 5.17-1.85 9-6.75 9-12V7l-9-5z"/>
+                </svg>
+                SirisUnlocker
+            </a>
+            <nav class="nav" aria-label="Основная навигация">
+                <button class="nav__toggle" aria-label="Открыть меню" aria-expanded="false">
+                    <span></span><span></span><span></span>
+                </button>
+                <ul class="nav__list" role="list">
+                    <li><a href="#" data-page="home" class="nav__link nav__link--active">Главная</a></li>
+                    <li><a href="#" data-page="about" class="nav__link">О программе</a></li>
+                    <li><a href="#" data-page="features" class="nav__link">Возможности</a></li>
+                    <li><a href="#" data-page="screens" class="nav__link">Скриншоты</a></li>
+                    <li><a href="#" data-page="changelog" class="nav__link">Релизы</a></li>
+                    <li><a href="#" data-page="download" class="nav__link">Скачать</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main class="main">
+        <div class="container" id="page-container">
+            <section class="hero">
+                <figure class="hero__image-wrapper">
+                    <img src="screen0.png" alt="Интерфейс SirisUnlocker" class="hero__image" loading="lazy" width="900" height="560">
+                </figure>
+                <h1 class="hero__title">SirisUnlocker</h1>
+                <p class="hero__subtitle">Портативный инструмент для снятия ограничений,<br>управления автозагрузкой и процессами в Windows 10/11</p>
+                <button class="btn btn--primary open-modal-btn">Скачать Siris</button>
+            </section>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container footer__inner">
+            <p class="footer__text">SirisUnlocker &copy; 2026 — <a href="#" class="footer__link" id="adminTrigger">DiscoD3979</a></p>
+            <a href="https://t.me/MemesSrd" target="_blank" rel="noopener" class="footer__social" aria-label="Telegram канал">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                    <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/>
+                </svg>
+            </a>
+        </div>
+    </footer>
+
+    <!-- Download Modal with Lightning Animation -->
+    <div class="modal" id="downloadModal" role="dialog" aria-modal="true" aria-hidden="true">
+        <div class="modal__overlay" tabindex="-1"></div>
+        <div class="modal__container">
+            <button class="modal__close" aria-label="Закрыть">&times;</button>
+            <div class="modal__col modal__col--site">
+                <h3 class="modal__title">
+                    <img src="favicon.ico" width="28" height="28" alt="Site" style="border-radius:4px;">
+                    Сайт
+                </h3>
+                <ul class="modal__list">
+                    <li>Прямая загрузка</li>
+                    <li>Всегда актуально</li>
+                </ul>
+                <a href="SirisUnlocker.exe" download class="btn btn--modal btn--site" id="downloadSiteBtn">Скачать с сайта</a>
+            </div>
+
+            <!-- Lightning Divider -->
+            <div class="modal__divider">
+                <svg class="lightning-svg" viewBox="0 0 120 600" preserveAspectRatio="none">
+                    <polyline points="60,0 50,100 65,200 45,300 70,400 55,500 60,600" fill="none" stroke="#e03434" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+                    <polyline points="60,0 50,100 65,200 45,300 70,400 55,500 60,600" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="0.6"/>
+                </svg>
+            </div>
+
+            <div class="modal__col modal__col--github">
+                <h3 class="modal__title">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61-.546-1.385-1.335-1.755-1.335-1.755-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 21.795 24 17.295 24 12c0-6.63-5.37-12-12-12z"/></svg>
+                    GitHub
+                </h3>
+                <ul class="modal__list">
+                    <li>Все версии</li>
+                    <li>Последние релизы</li>
+                    <li>Исходный код</li>
+                </ul>
+                <a href="https://github.com/DiscoD3979/Siris-Unlocker/releases/latest" target="_blank" rel="noopener" class="btn btn--modal btn--github">Перейти на GitHub</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="lightbox" id="lightbox" role="dialog" aria-hidden="true">
+        <button class="lightbox__close" aria-label="Закрыть">&times;</button>
+        <img class="lightbox__image" id="lightbox-img" src="" alt="Полный размер скриншота">
+    </div>
+
+    <div class="admin-toast" id="adminToast"></div>
+
+    <script src="pages.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

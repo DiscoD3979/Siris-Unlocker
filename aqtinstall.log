@@ -1,0 +1,9 @@
+2026-07-09 13:03:24,857 - aqt.metadata - DEBUG - metadata 6592 Connection to 'https://download.qt.io' failed. Retrying with fallback 'https://ftp.yz.yamagata-u.ac.jp/pub/qtproject/'.
+2026-07-09 13:03:33,573 - aqt.helper - DEBUG - helper 17852 Attempt to download checksum at https://download.qt.io/online/qtsdkrepository/windows_x86/desktop/qt6_683/qt6_683/Updates.xml.sha256
+2026-07-09 13:04:07,469 - aqt.helper - DEBUG - helper 17852 Attempt to download checksum at https://download.qt.io/online/qtsdkrepository/windows_x86/desktop/qt6_683/qt6_683/Updates.xml.sha256
+2026-07-09 13:05:00,265 - aqt.main - INFO - installer 15148 aqtinstall(aqt) v3.3.0 on Python 3.13.7 [CPython MSC v.1944 64 bit (AMD64)]
+2026-07-09 13:05:00,266 - aqt.helper - DEBUG - helper 15148 Attempt to download checksum at https://download.qt.io/online/qtsdkrepository/windows_x86/desktop/qt6_683/qt6_683/Updates.xml.sha256
+2026-07-09 13:06:19,533 - aqt.main - INFO - installer 6016 aqtinstall(aqt) v3.3.0 on Python 3.13.7 [CPython MSC v.1944 64 bit (AMD64)]
+2026-07-09 13:06:19,533 - aqt.helper - DEBUG - helper 6016 Attempt to download checksum at https://download.qt.io/online/qtsdkrepository/windows_x86/desktop/qt6_683/qt6_683/Updates.xml.sha256
+2026-07-09 13:10:09,421 - aqt.main - INFO - installer 18984 aqtinstall(aqt) v3.3.0 on Python 3.13.7 [CPython MSC v.1944 64 bit (AMD64)]
+2026-07-09 13:10:09,421 - aqt.helper - DEBUG - helper 18984 Attempt to download checksum at https://download.qt.io/online/qtsdkrepository/windows_x86/desktop/qt6_683/qt6_683/Updates.xml.sha256
